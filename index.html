@@ -7,15 +7,15 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Finanzas">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#0e6b66">
+<meta name="theme-color" content="#C65D1E">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icon-192.png">
 <title>Mis finanzas</title>
 <style>
-:root{--bg:#eef1ee;--panel:#fff;--ink:#17262b;--mut:#5b6b70;--line:#d5dcd8;--acc:#0e6b66;--onacc:#fff;--out:#a63a2e;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101a1c;--panel:#172326;--ink:#e6eeec;--mut:#93a5a6;--line:#25363a;--acc:#4db6ac;--onacc:#0b1a1b;--out:#e58a7b;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#101a1c;--panel:#172326;--ink:#e6eeec;--mut:#93a5a6;--line:#25363a;--acc:#4db6ac;--onacc:#0b1a1b;--out:#e58a7b;color-scheme:dark}
+:root{--bg:#eef1ee;--panel:#fff;--ink:#17262b;--mut:#5b6b70;--line:#d5dcd8;--acc:#C65D1E;--onacc:#fff;--out:#a63a2e;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101a1c;--panel:#172326;--ink:#e6eeec;--mut:#93a5a6;--line:#25363a;--acc:#FFAB70;--onacc:#0b1a1b;--out:#e58a7b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#101a1c;--panel:#172326;--ink:#e6eeec;--mut:#93a5a6;--line:#25363a;--acc:#FFAB70;--onacc:#0b1a1b;--out:#e58a7b;color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}
 main{max-width:640px;margin:0 auto;padding:16px 18px 150px}
@@ -58,12 +58,12 @@ textarea{min-height:90px}
 :focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 /* Harmonización visual de Mis finanzas */
 :root{
-  --bg:#f3f6f4;--panel:#ffffff;--ink:#182b2d;--mut:#657775;--line:#dfe7e2;
-  --acc:#087f73;--onacc:#ffffff;--out:#b5473b;--soft:#e6f4ef;
-  --shadow:0 5px 18px rgba(22,54,46,.055);color-scheme:light;
+  --bg:#FAF5F0;--panel:#FFFFFF;--ink:#30241D;--mut:#78675C;--line:#E8DCD1;
+  --acc:#C65D1E;--onacc:#FFFFFF;--out:#B5473B;--soft:#FBE9DC;
+  --shadow:0 5px 18px rgba(92,48,19,.075);color-scheme:light;
 }
-@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101918;--panel:#182421;--ink:#e8f0ec;--mut:#9aada5;--line:#2c3b35;--acc:#63c7b4;--onacc:#10201c;--out:#f09183;--soft:#203b34;--shadow:0 5px 18px rgba(0,0,0,.14)}}
-:root[data-theme="dark"]{--bg:#101918;--panel:#182421;--ink:#e8f0ec;--mut:#9aada5;--line:#2c3b35;--acc:#63c7b4;--onacc:#10201c;--out:#f09183;--soft:#203b34;--shadow:0 5px 18px rgba(0,0,0,.14)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1D1713;--panel:#29201A;--ink:#F7EEE7;--mut:#C5B2A3;--line:#49372B;--acc:#FFAB70;--onacc:#2A1B12;--out:#F09183;--soft:#422B1D;--shadow:0 5px 18px rgba(0,0,0,.14)}}
+:root[data-theme="dark"]{--bg:#1D1713;--panel:#29201A;--ink:#F7EEE7;--mut:#C5B2A3;--line:#49372B;--acc:#FFAB70;--onacc:#2A1B12;--out:#F09183;--soft:#422B1D;--shadow:0 5px 18px rgba(0,0,0,.14)}
 html{scroll-behavior:smooth;background:var(--bg)}
 body{letter-spacing:-.012em;-webkit-font-smoothing:antialiased}
 main{max-width:720px;padding:22px 18px calc(126px + env(safe-area-inset-bottom,0px))}
