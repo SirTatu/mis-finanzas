@@ -1,6 +1,6 @@
 // Service worker: la app abre aunque no haya conexión.
 // Con internet siempre baja la versión más nueva; sin internet usa la guardada.
-const CACHE = 'finanzas-v4';
+const CACHE = 'finanzas-v5';
 const ARCHIVOS = ['./', 'index.html', 'sync.js', 'config.js', 'biometric.js', 'push.js', 'manifest.webmanifest',
   'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 

@@ -5,8 +5,9 @@ function dateOnly(v: unknown): string | null {
   const m = v.match(/^(\d{4}-\d{2}-\d{2})/); return m ? m[1] : null;
 }
 function dayDiff(iso: string, today: string) { return Math.round((Date.parse(iso+'T12:00:00Z')-Date.parse(today+'T12:00:00Z'))/86400000); }
+function argentinaToday() { return new Intl.DateTimeFormat('en-CA', {timeZone:'America/Argentina/Buenos_Aires',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()); }
 function upcoming(doc: any, today: string) {
-  const found: {name:string,date:string,kind:string}[] = [];
+  const found: {name:string,date:string,kind:string,label:string}[] = [];
   const scan = (items: any[], kind: string) => {
     for (const item of (Array.isArray(items) ? items : [])) {
       if (!item || typeof item !== 'object') continue;
@@ -14,17 +15,17 @@ function upcoming(doc: any, today: string) {
       for (const key of Object.keys(item)) {
         if (!/(venc|vence|cierre|fecha|due)/i.test(key)) continue;
         const d = dateOnly(item[key]); if (!d) continue;
-        const delta = dayDiff(d, today); if (delta >= 0 && delta <= 3) found.push({name,date:d,kind:kind});
+        const delta = dayDiff(d, today); if (delta >= 0 && delta <= 3) { const label = /cierre/i.test(key) ? 'cierra' : kind === 'gasto fijo' ? 'gasto fijo' : 'vence'; found.push({name,date:d,kind,label}); }
       }
       // Gastos fijos guardan el día del mes, no una fecha completa.
       if (kind === 'gasto fijo' && Number.isInteger(Number(item.dia)) && Number(item.dia)>=1 && Number(item.dia)<=31 && item.activo!==false) {
         const [y,m] = today.split('-').map(Number); const last = new Date(Date.UTC(y,m,0)).getUTCDate(); const d = `${y}-${String(m).padStart(2,'0')}-${String(Math.min(Number(item.dia),last)).padStart(2,'0')}`; const delta=dayDiff(d,today);
-        if (delta>=0 && delta<=3 && (item.ult||'')<today.slice(0,7)) found.push({name,date:d,kind});
+        if (delta>=0 && delta<=3 && (item.ult||'')<today.slice(0,7)) found.push({name,date:d,kind,label:'gasto fijo'});
       }
     }
   };
   scan(doc?.tarjetas,'tarjeta'); scan(doc?.vtos,'vencimiento'); scan((doc?.fijos||[]).filter((x:any)=>x.activo!==false),'gasto fijo');
-  const unique = new Map(found.map(x=>[`${x.kind}|${x.name}|${x.date}`,x]));
+  const unique = new Map(found.map(x=>[`${x.kind}|${x.name}|${x.date}|${x.label}`,x]));
   return [...unique.values()].sort((a,b)=>a.date.localeCompare(b.date)).slice(0,8);
 }
 Deno.serve(async (req) => {
@@ -40,12 +41,12 @@ Deno.serve(async (req) => {
   const admin = createClient(url, service, {auth:{persistSession:false}});
   const {data:docs,error:docErr} = await admin.from('datos').select('user_id,doc');
   if (docErr) return new Response(JSON.stringify({error:docErr.message}),{status:500});
-  const today = new Date().toISOString().slice(0,10); let sent=0, failed=0, considered=0;
+  const today = argentinaToday(); let sent=0, failed=0, considered=0;
   for (const row of docs||[]) {
     const items=upcoming(row.doc,today); if(!items.length) continue;
     const {data:subs,error} = await admin.from('push_subscriptions').select('id,subscription').eq('user_id',row.user_id);
     if(error) { failed++; continue; }
-    const body = items.slice(0,3).map(x=>`${x.name}: ${x.date===today?'vence hoy':`vence el ${x.date}`}`).join(' · ')+(items.length>3?` · y ${items.length-3} más`:'' );
+    const body = items.slice(0,3).map(x=>`${x.name}: ${x.label==='cierra'?(x.date===today?'cierra hoy':`cierra el ${x.date}`):x.label==='gasto fijo'?(x.date===today?'gasto fijo hoy':`gasto fijo el ${x.date}`):(x.date===today?'vence hoy':`vence el ${x.date}`)}`).join(' · ')+(items.length>3?` · y ${items.length-3} más`:'' );
     for(const sub of subs||[]) {
       considered++;
       try { await webpush.sendNotification(sub.subscription, JSON.stringify({title:'Mis finanzas · próximos vencimientos',body,url:'./',tag:`vencimientos-${today}`})); sent++; }

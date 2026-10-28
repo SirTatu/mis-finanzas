@@ -15,6 +15,15 @@ Esta versión continúa sobre la PWA anterior y conserva el almacenamiento local
 - Renombrado de categorías, presupuestos por tarjeta, gastos fijos variables y carga retroactiva rápida, bloqueo local por PIN.
 - Se conservan los datos JSON en Supabase, por lo que no se requiere modificar la tabla `datos` para estos campos nuevos.
 
+## Nuevas mejoras de rendimientos en esta versión
+
+- Horario de notificaciones actualizado a las 18:00 de Argentina: el cron debe quedar a las 21:00 UTC; se incluye SQL para actualizar el trabajo existente sin duplicarlo.
+- Límites configurables por billetera: ingresos diarios/mensuales y transferencias salientes diarias/mensuales. El uso se calcula automáticamente desde transferencias reales registradas; se pueden editar transferencias para corregir fecha, importe o anularlas.
+- Registro de transferencias de una billetera a otra, con origen/destino y fecha, para alimentar el cálculo de límites. Solo las operaciones realizadas consumen límite.
+- Corrección histórica del rendimiento por fecha y billetera: marcar transferencia omitida, rendimiento cero o introducir el rendimiento correcto.
+- Tasas con fecha efectiva: los cambios se guardan como historial y se aplica la tasa vigente en cada fecha, sin recalcular fechas anteriores con la nueva tasa.
+- Capturas históricas congeladas de rendimientos hasta una fecha, con saldo, rendimiento acumulado, detalle diario y tasas por billetera. Las capturas existentes no se alteran al cambiar tasas posteriores.
+
 ## Límites reales que siguen necesitando configuración externa
 
 - **Notificaciones push con la app cerrada:** no se activan solamente cambiando HTML. Requieren claves VAPID, guardar suscripciones, un servicio push y un proceso servidor programado (por ejemplo, Supabase Edge Functions + Cron). No se simulan como si ya estuvieran activas.
@@ -30,7 +39,7 @@ Esta versión continúa sobre la PWA anterior y conserva el almacenamiento local
 2. Copiá tus valores reales de Supabase en `config.js` únicamente en tu copia local; solo URL de proyecto y clave pública `anon`/`publishable`. Nunca incluyas `service_role` ni claves secretas en el navegador.
 3. Publicá los archivos de esta carpeta en la raíz del repositorio de GitHub Pages.
 4. Probá primero con datos ficticios: ARS/USD, cuotas con centavos, edición, borrado de un grupo de cuotas, transferencias con tipo de cambio, exportación CSV, restauración y sincronización en dos dispositivos.
-5. La sintaxis JavaScript se verificó. La conexión real con tu proyecto de Supabase y las notificaciones push no se pueden certificar sin desplegar y probar con tu proyecto y credenciales.
+5. La sintaxis JavaScript se verificó. Las notificaciones requieren que actualices el cron en tu proyecto Supabase con la consulta de `NOTIFICACIONES-Y-BIOMETRIA.md`; este ZIP no puede modificar directamente la configuración remota de Supabase. La conexión real con tu proyecto de Supabase y las notificaciones push no se pueden certificar sin desplegar y probar con tu proyecto y credenciales.
 
 ## Notificaciones y biometría (código agregado en esta versión)
 

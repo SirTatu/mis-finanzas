@@ -73,12 +73,12 @@ Guardá el mismo secreto `CRON_SECRET` en Vault (una sola vez):
 select vault.create_secret('PEGAR_EL_MISMO_CRON_SECRET', 'mf_push_cron_secret', 'Autorización del cron de notificaciones de Mis finanzas');
 ```
 
-Luego programá la función para todos los días a las 12:00 UTC (09:00 de Argentina): reemplazá `TU_PROJECT_REF` por el ref de tu proyecto.
+Luego programá la función para todos los días a las 21:00 UTC (18:00 de Argentina). Como ya existe el trabajo `mis-finanzas-recordatorios-diarios`, esta consulta actualiza su horario por nombre; no crees otro trabajo. Reemplazá `TU_PROJECT_REF` por el ref de tu proyecto.
 
 ```sql
 select cron.schedule(
   'mis-finanzas-recordatorios-diarios',
-  '0 12 * * *',
+  '0 21 * * *',
   $$
   select net.http_post(
     url := 'https://TU_PROJECT_REF.supabase.co/functions/v1/send-reminders',
@@ -98,7 +98,7 @@ Para comprobar el trabajo programado:
 select * from cron.job where jobname = 'mis-finanzas-recordatorios-diarios';
 ```
 
-La función revisa las fechas de cierre/vencimiento de tarjetas, vencimientos configurados y días de gastos fijos guardados en `datos.doc`. Envía aviso si encuentra fechas entre hoy y los próximos 3 días. Las notificaciones dependen de que el dispositivo haya concedido permiso y conserve una suscripción push válida.
+La función revisa las fechas de cierre/vencimiento de tarjetas, vencimientos configurados y días de gastos fijos guardados en `datos.doc`. Envía aviso si encuentra fechas entre hoy y los próximos 3 días. Los mensajes distinguen entre cierre de tarjeta, vencimiento y gasto fijo. La fecha se interpreta con la zona horaria de Argentina. Las notificaciones dependen de que el dispositivo haya concedido permiso y conserve una suscripción push válida.
 
 ## 6. Activar desde el iPhone
 
@@ -106,6 +106,10 @@ La función revisa las fechas de cierre/vencimiento de tarjetas, vencimientos co
 2. Instalá/abrí la PWA desde la pantalla de inicio del iPhone (requisito de iOS para Web Push).
 3. Iniciá sesión, abrí Ajustes → Notificaciones → Activar notificaciones y aceptá el permiso.
 4. Probá una notificación y revisá los logs de `send-reminders` en Supabase.
+
+## Actualizar el cron si ya estaba programado a las 09:00
+
+Primero, desde una terminal abierta en la carpeta `mis-finanzas-pwa`, volvé a desplegar la función actualizada: `supabase functions deploy send-reminders --no-verify-jwt`. Después, en Supabase SQL Editor, ejecutá la consulta de programación anterior con el mismo nombre `mis-finanzas-recordatorios-diarios` y el horario `0 21 * * *`. En `pg_cron`, programar con el mismo nombre actualiza el trabajo existente. Luego verificá que aparezca una sola fila con ese nombre en `cron.job` y que el campo `schedule` sea `0 21 * * *`.
 
 ## Seguridad y límites
 
