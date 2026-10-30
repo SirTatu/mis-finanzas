@@ -185,13 +185,15 @@ const nuevoForm=()=>({tipo:'Gasto',monto:'',desc:'',cat:S.categorias[0]||'',pago
 
 function guardarMov(){
   const f=V.f,monto=num(f.monto),n=Math.floor(Number(f.cuotas)||1);
-  if(!(monto>0)){V.err='Ingresá un importe mayor que cero.';return}
+  if(!Number.isFinite(monto)||monto===0){V.err='Ingresá un importe distinto de cero.';return}
   if(!f.desc.trim()){V.err='Escribí una descripción.';return}
   if(!okISO(f.fecha)){V.err='La fecha no es válida.';return}
   const pagos=pagoOpciones(f.tipo).map(o=>o[0]);
   const pago=pagos.indexOf(f.pago)>-1?f.pago:pagos[0];
   if(!pago){V.err='Primero agregá un medio de pago en Ajustes.';return}
-  const cuotas=(f.tipo==='Gasto'&&pago.indexOf('tarjeta:')===0)?n:1;
+  const esAjusteTarjeta=monto<0&&f.tipo==='Gasto'&&pago.indexOf('tarjeta:')===0;
+  if(monto<0&&!esAjusteTarjeta){V.err='Los importes negativos solo se permiten para reintegros o ajustes de gastos en tarjetas.';return}
+  const cuotas=esAjusteTarjeta?1:((f.tipo==='Gasto'&&pago.indexOf('tarjeta:')===0)?n:1);
   if(cuotas<1||cuotas>48){V.err='Las cuotas van de 1 a 48.';return}
   const moneda=(f.moneda||'ARS').toUpperCase();if(!/^[A-Z]{3}$/.test(moneda)){V.err='La moneda debe ser un código de 3 letras, por ejemplo ARS, USD o EUR.';return}if(pago.indexOf('tarjeta:')===0&&moneda!=='ARS'){V.err='Por ahora los consumos de tarjetas se registran en ARS. Para otra moneda usá otro medio de pago y registrá la conversión en la cuenta.';return}const base={tipo:f.tipo,pago:pago,cat:f.cat,moneda:moneda};
   const d=f.desc.trim();
@@ -246,7 +248,7 @@ function vMov(){
   if(V.movHasta)ms=ms.filter(m=>m.fecha<=V.movHasta);
   ms.sort((x,y)=>y.fecha.localeCompare(x.fecha));
   const opts=(arr,sel,all)=>`<option value="${all}">${all}</option>`+arr.map(x=>{const value=typeof x==='object'?x.value:x,label=typeof x==='object'?x.label:x;return `<option value="${esc(value)}" ${sel===value?'selected':''}>${esc(label)}</option>`}).join('');
-  return hMes()+`<label>Buscar movimiento<input id="movQ" data-mov="movQ" value="${esc(V.movQ)}" placeholder="Descripción, categoría, tarjeta o importe"></label><div class="add" style="margin-top:8px"><select data-mov="movTipo">${opts(['Gasto','Ingreso'],V.movTipo,'Todos')}</select><select data-mov="movCat">${opts(S.categorias.concat(S.catIng).filter((x,i,a)=>a.indexOf(x)===i),V.movCat,'Todas')}</select></div><label>Moneda<select data-mov="movMon">${opts(monedasDisponibles(),V.movMon,'Todas')}</select></label><label>Medio de pago<select data-mov="movPago">${opts(S.tarjetas.map(t=>'tarjeta:'+t.id).concat(S.medios.map(m=>'medio:'+m)).map(p=>({value:p,label:pagoNombre(p)})),V.movPago,'Todos')}</select></label><div class="add"><label style="flex:1">Desde<input type="date" data-mov="movDesde" value="${esc(V.movDesde)}"></label><label style="flex:1">Hasta<input type="date" data-mov="movHasta" value="${esc(V.movHasta)}"></label></div><button class="btn sec" data-a="limpiarFiltros">Limpiar filtros</button><p class="mut" style="margin-top:10px">${ms.length} movimiento(s) · <button class="lnk" data-a="exportCSV">Exportar a Excel (CSV)</button></p>`+(ms.map(m=>`<button class="row mv" data-a="editMov" data-id="${m.id}"><span><b>${esc(m.desc)}</b><br><small class="mut">${esc(m.cat||'Ingreso')} · ${esc(pagoNombre(m.pago))} · ${fd(m.fecha)} · ${esc(m.moneda||'ARS')}</small></span><span class="num ${m.tipo==='Ingreso'?'in':'out'}">${m.tipo==='Ingreso'?'+':'−'}${fmt(m.monto,m.moneda||'ARS')}</span></button>`).join('')||'<p class="mut">No hay movimientos que coincidan con los filtros.</p>');
+  return hMes()+`<label>Buscar movimiento<input id="movQ" data-mov="movQ" value="${esc(V.movQ)}" placeholder="Descripción, categoría, tarjeta o importe"></label><div class="add" style="margin-top:8px"><select data-mov="movTipo">${opts(['Gasto','Ingreso'],V.movTipo,'Todos')}</select><select data-mov="movCat">${opts(S.categorias.concat(S.catIng).filter((x,i,a)=>a.indexOf(x)===i),V.movCat,'Todas')}</select></div><label>Moneda<select data-mov="movMon">${opts(monedasDisponibles(),V.movMon,'Todas')}</select></label><label>Medio de pago<select data-mov="movPago">${opts(S.tarjetas.map(t=>'tarjeta:'+t.id).concat(S.medios.map(m=>'medio:'+m)).map(p=>({value:p,label:pagoNombre(p)})),V.movPago,'Todos')}</select></label><div class="add"><label style="flex:1">Desde<input type="date" data-mov="movDesde" value="${esc(V.movDesde)}"></label><label style="flex:1">Hasta<input type="date" data-mov="movHasta" value="${esc(V.movHasta)}"></label></div><button class="btn sec" data-a="limpiarFiltros">Limpiar filtros</button><p class="mut" style="margin-top:10px">${ms.length} movimiento(s) · <button class="lnk" data-a="exportCSV">Exportar a Excel (CSV)</button></p>`+(ms.map(m=>`<button class="row mv" data-a="editMov" data-id="${m.id}"><span><b>${esc(m.desc)}</b><br><small class="mut">${esc(m.cat||'Ingreso')} · ${esc(pagoNombre(m.pago))} · ${fd(m.fecha)} · ${esc(m.moneda||'ARS')}</small></span><span class="num ${m.tipo==='Ingreso'||m.monto<0?'in':'out'}">${m.tipo==='Ingreso'||m.monto<0?'+':'−'}${fmt(Math.abs(m.monto),m.moneda||'ARS')}</span></button>`).join('')||'<p class="mut">No hay movimientos que coincidan con los filtros.</p>');
 }
 function vTar(){
   const h=hoy();
@@ -356,7 +358,7 @@ function sheet(){
     const CL=f.tipo==='Gasto'?S.categorias:S.catIng;if(CL.indexOf(f.cat)<0)f.cat=CL[0]||'';
     const cu=f.tipo==='Gasto'&&pago.indexOf('tarjeta:')===0;
     return `<div class="ov" data-a="cerrar"></div><div class="sh"><div class="seg"><button data-a="tipo" data-t="Gasto" ${f.tipo==='Gasto'?'aria-pressed="true"':''}>Gasto</button><button data-a="tipo" data-t="Ingreso" ${f.tipo==='Ingreso'?'aria-pressed="true"':''}>Ingreso</button></div>
-<label>Importe<input data-f="monto" inputmode="decimal" value="${esc(f.monto)}" placeholder="0"></label><label>Moneda<select data-f="moneda">${monedasDisponibles().map(m=>`<option value="${m}" ${(f.moneda||'ARS')===m?'selected':''}>${m}</option>`).join('')}</select></label>
+<label>Importe<input data-f="monto" inputmode="decimal" value="${esc(f.monto)}" placeholder="0"></label>${cu?'<p class="cell-help">También podés ingresar un importe negativo para registrar un reintegro o descuento que reduzca el total de esta tarjeta.</p>':''}<label>Moneda<select data-f="moneda">${monedasDisponibles().map(m=>`<option value="${m}" ${(f.moneda||'ARS')===m?'selected':''}>${m}</option>`).join('')}</select></label>
 <label>Descripción<input data-f="desc" value="${esc(f.desc)}" placeholder="Ej: Supermercado"></label>
 <label>Categoría<select data-f="cat">${CL.map(c=>`<option value="${esc(c)}" ${c===f.cat?'selected':''}>${esc(c)}</option>`).join('')}</select></label>
 <label>Medio de pago<select data-f="pago" data-r="1">${op.map(o=>`<option value="${esc(o[0])}" ${o[0]===pago?'selected':''}>${esc(o[1])}</option>`).join('')}</select></label>
