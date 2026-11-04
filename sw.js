@@ -1,7 +1,7 @@
 // Service worker: la app abre aunque no haya conexión.
 // Con internet siempre baja la versión más nueva; sin internet usa la guardada.
-const CACHE = 'finanzas-v5';
-const ARCHIVOS = ['./', 'index.html', 'sync.js', 'config.js', 'biometric.js', 'push.js', 'manifest.webmanifest',
+const CACHE = 'finanzas-v6';
+const ARCHIVOS = ['./', 'index.html', 'sync.js', 'config.js', 'biometric.js', 'push.js', 'notif-config.js', 'manifest.webmanifest',
   'icon-192.png', 'icon-512.png', 'apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
