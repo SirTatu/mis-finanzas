@@ -157,6 +157,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--acc);box
 .ws.full .tt tbody tr:hover td:first-child{background:var(--soft,var(--panel))}
 .ws.full .tt tr.hoyr td{font-weight:700}.ws.full .tt tr.hoyr td:first-child{background:color-mix(in srgb,var(--acc) 12%,var(--panel))}
 .tdet-n{display:flex;align-items:center;justify-content:space-between;margin:14px 0 6px;text-align:center}
+.sg{display:flex;gap:6px;overflow-x:auto;padding:8px 0 4px;scrollbar-width:none}.sg::-webkit-scrollbar{display:none}
+.sg button,.bo button{white-space:nowrap;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:7px 12px;font:inherit;font-size:13px;cursor:pointer}
+.bo{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 </style>
 </head>
 <body>
@@ -181,10 +184,11 @@ const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 
 const K='finanzas_v1';
 let S,V={tab:'res',mes:hoy().slice(0,7),sheet:null,f:null,c:null,w:null,s:null,largo:false,id:null,err:'',msg:'',pend:null,ctx:'',foco:false,movQ:'',movTipo:'Todos',movCat:'Todas',movPago:'Todos',movDesde:'',movHasta:'',movMon:'Todas',monedaVista:'ARS',rmes:hoy().slice(0,7),chat:[{r:'b',t:'Escribime un gasto o ingreso y lo registro. También puedo ayudarte a consultar, editar o borrar movimientos.'}],pinHash:null,lockEnabled:false,lockSetup:false};
+try{const _c=JSON.parse(localStorage.getItem('mf_chat_v1'));if(Array.isArray(_c)&&_c.length)V.chat=_c}catch(e){}
 function load(){
   try{S=JSON.parse(localStorage.getItem(K))}catch(e){S=null}
   if(!S||!Array.isArray(S.movs))S={tarjetas:[],medios:['Efectivo','Débito','Transferencia'],categorias:['Supermercado','Transporte','Salidas','Servicios','Salud','Hogar','Otros'],movs:[]};
-  S.movs.forEach(m=>{if(!m.moneda)m.moneda='ARS'});S.tarjetas=S.tarjetas||[];S.medios=S.medios||[];S.categorias=S.categorias||[];S.catIng=S.catIng||['Sueldo','Ventas','Otros ingresos'];S.pres=S.pres||{};S.fijos=S.fijos||[];S.vtos=S.vtos||[];S.bor=S.bor||[];S.presTar=S.presTar||{};S.cuentas=S.cuentas||[];S.transferencias=S.transferencias||[];S.moneda=S.moneda||'ARS';if(S.rend){S.rend.hist=S.rend.hist||[];S.rend.log=S.rend.log||{};S.rend.capturas=S.rend.capturas||[];S.rend.transferencias=S.rend.transferencias||[];S.rend.correcciones=S.rend.correcciones||{};S.rend.feriados=S.rend.feriados||[];S.rend.b=(S.rend.b||[]).map(b=>{b.limites=b.limites||{ingresoMensual:0,ingresoDiario:0,salidaMensual:0,salidaDiaria:0};b.tasas=b.tasas||[{desde:addDays(S.rend.fecha||hoy(),1),tna:Number(b.tna)||0}];b.ov=b.ov||{};if(!b.calendario)b.calendario=/(carre|carrefour|naranja|uala)/i.test(b.nombre||'')?'diario':'habil';return b})}
+  S.movs.forEach(m=>{if(!m.moneda)m.moneda='ARS'});S.tarjetas=S.tarjetas||[];S.medios=S.medios||[];S.categorias=S.categorias||[];S.catIng=S.catIng||['Sueldo','Ventas','Otros ingresos'];S.pres=S.pres||{};S.fijos=S.fijos||[];S.vtos=S.vtos||[];S.bor=S.bor||[];S.presTar=S.presTar||{};S.cuentas=S.cuentas||[];S.transferencias=S.transferencias||[];S.moneda=S.moneda||'ARS';S.memoria=S.memoria||{};if(S.rend){S.rend.hist=S.rend.hist||[];S.rend.log=S.rend.log||{};S.rend.capturas=S.rend.capturas||[];S.rend.transferencias=S.rend.transferencias||[];S.rend.correcciones=S.rend.correcciones||{};S.rend.feriados=S.rend.feriados||[];S.rend.b=(S.rend.b||[]).map(b=>{b.limites=b.limites||{ingresoMensual:0,ingresoDiario:0,salidaMensual:0,salidaDiaria:0};b.tasas=b.tasas||[{desde:addDays(S.rend.fecha||hoy(),1),tna:Number(b.tna)||0}];b.ov=b.ov||{};if(!b.calendario)b.calendario=/(carre|carrefour|naranja|uala)/i.test(b.nombre||'')?'diario':'habil';return b})}
 }
 const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}if(window.marcarSucio)window.marcarSucio()};
 const tomb=ids=>{S.bor=(S.bor||[]).concat(ids)};
@@ -601,19 +605,19 @@ function interpretar(o){
  const ws=s=>nz(s).split(/[^a-z0-9]+/).filter(Boolean),has=w=>new RegExp('\\b'+w+'\\b').test(t);
  let pago=null;
  const tj=S.tarjetas.filter(x=>ws(x.nombre).every(has)||(/mercado pago/.test(nz(x.nombre))&&has('mp')));
- if(tj.length>1)return{ok:false,preg:'¿Cuál de estas tarjetas? '+tj.map(x=>x.nombre).join(', ')+'.'};
+ if(tj.length>1)return{ok:false,preg:'¿Cuál de estas tarjetas? '+tj.map(x=>x.nombre).join(', ')+'.',opts:tj.map(x=>x.nombre)};
  if(tj.length===1)pago='tarjeta:'+tj[0].id;
  else{const AL={cash:'efectivo',transferi:'transferencia',debito:'debito'};const md=S.medios.find(m=>ws(m).every(has)||Object.keys(AL).some(k=>has(k)&&nz(m)===AL[k]));if(md)pago='medio:'+md}
  if(tipo==='Ingreso'&&pago&&pago.indexOf('tarjeta:')===0)pago=null;
  if(!pago){
-  if(tipo==='Gasto'&&S.tarjetas.length&&/\b(visa|mastercard|master|amex|credito|tarjeta)\b/.test(t))return{ok:false,preg:'¿Con qué tarjeta? Tenés: '+S.tarjetas.map(x=>x.nombre).join(', ')+'.'};
-  return{ok:false,preg:(tipo==='Gasto'?'¿Con qué lo pagaste?':'¿En qué medio lo recibiste?')+' Opciones: '+pagoOpciones(tipo).map(x=>x[1]).join(', ')+'.'};
+  if(tipo==='Gasto'&&S.tarjetas.length&&/\b(visa|mastercard|master|amex|credito|tarjeta)\b/.test(t))return{ok:false,preg:'¿Con qué tarjeta? Tenés: '+S.tarjetas.map(x=>x.nombre).join(', ')+'.',opts:S.tarjetas.map(x=>x.nombre)};
+  return{ok:false,preg:(tipo==='Gasto'?'¿Con qué lo pagaste?':'¿En qué medio lo recibiste?')+' Opciones: '+pagoOpciones(tipo).map(x=>x[1]).join(', ')+'.',opts:pagoOpciones(tipo).map(x=>x[1])};
  }
  const cm=t.match(/\b(?:en\s+)?(\d{1,2})\s+cuotas?\b/);let cuotas=1;
  if(cm&&tipo==='Gasto'&&pago.indexOf('tarjeta:')===0){cuotas=Number(cm[1]);if(cuotas<1||cuotas>48)return{ok:false,preg:'Las cuotas van de 1 a 48. ¿Cuántas son?'};if(cuotas>1&&/\bcuotas?\s+(?:de|x)\s*\$?\s*\d/.test(t))monto=Math.round(monto*cuotas*100)/100}
  const lista=tipo==='Gasto'?S.categorias:S.catIng;
- const HINT={supermercado:'super|coto|carrefour|chango|jumbo|verduleria|carniceria|almacen',transporte:'nafta|uber|cabify|sube|colectivo|peaje|estacionamiento|taxi|combustible',salidas:'cine|bar|restaurante|cena|almuerzo|birra|cafe|pizza|boliche|helado',servicios:'luz|gas|agua|internet|celular|netflix|spotify|expensas|alquiler|telefono',salud:'farmacia|medico|dentista|prepaga|remedios|kinesio',hogar:'ferreteria|muebles|limpieza|pintura',sueldo:'sueldo|salario',ventas:'venta|vendi'};
- const cat=lista.find(c=>ws(c).length&&ws(c).every(has))||lista.find(c=>HINT[nz(c)]&&new RegExp('\\b('+HINT[nz(c)]+')\\b').test(t))||lista.find(c=>nz(c)==='otros'||nz(c)==='otros ingresos')||lista[0]||'';
+ const HINT=HINTG;
+ const cat=lista.find(c=>ws(c).length&&ws(c).every(has))||catMem(t,lista)||lista.find(c=>HINT[nz(c)]&&new RegExp('\\b('+HINT[nz(c)]+')\\b').test(t))||lista.find(c=>nz(c)==='otros'||nz(c)==='otros ingresos')||lista[0]||'';
  const stop=new Set([].concat(S.tarjetas.reduce((a,x)=>a.concat(ws(x.nombre)),[]),S.medios.reduce((a,x)=>a.concat(ws(x)),[]),'visa mastercard master amex credito tarjeta mp cash transferi debito efectivo transferencia hoy ayer anoche anteayer manana esta usd dolares dolar eur euros euro brl reales real brasileno pesos peso'.split(' '),(VG+'|'+VID).split(/[|\s]+/)));
  const con=new Set('en con por de del la el los las un una unos unas a mediante usando'.split(' '));
  const tk=sn.replace(/\b(?:esta|por la|de la|a la|en la)\s+(?:mañana|manana|tarde|noche)\b/gi,' ').replace(/\$\s*\d[\d.,]*|\b\d[\d.,]*\s*(?:lucas?|k|mil|palos?|millones?|millon)\b|\b\d{1,3}(?:[.,]\d{3})+(?:,\d{1,2})?\b|\b\d+(?:,\d{1,2})?\b/gi,' ').split(/[\s,.;:!?()]+/).filter(Boolean).filter(w=>!stop.has(nz(w)));
@@ -626,8 +630,8 @@ function interpretar(o){
 const resumenOp=op=>op.tipo+' '+fmt(op.monto,op.moneda||'ARS')+(op.cuotas>1?' en '+op.cuotas+' cuotas':'')+'\n'+op.desc+' · '+(op.cat||'Sin categoría')+' · '+pagoNombre(op.pago)+' · '+fd(op.fecha);
 const wsG=s=>nz(s).split(/[^a-z0-9]+/).filter(Boolean),hasG=(w,t)=>new RegExp('\\b'+w+'\\b').test(t);
 const tjEn=t=>S.tarjetas.filter(x=>wsG(x.nombre).every(w=>hasG(w,t))||(/mercado pago/.test(nz(x.nombre))&&hasG('mp',t)));
-const HINTG={supermercado:'super|coto|carrefour|chango|jumbo|verduleria|carniceria|almacen',transporte:'nafta|uber|cabify|sube|colectivo|peaje|estacionamiento|taxi|combustible',salidas:'cine|bar|restaurante|cena|almuerzo|birra|cafe|pizza|boliche|helado',servicios:'luz|gas|agua|internet|celular|netflix|spotify|expensas|alquiler|telefono',salud:'farmacia|medico|dentista|prepaga|remedios|kinesio',hogar:'ferreteria|muebles|limpieza|pintura',sueldo:'sueldo|salario',ventas:'venta|vendi'};
-function catDe(t,tipo,estricta){const L=tipo==='Gasto'?S.categorias:S.catIng;const c=L.find(x=>wsG(x).length&&wsG(x).every(w=>hasG(w,t)))||L.find(x=>HINTG[nz(x)]&&new RegExp('\\b('+HINTG[nz(x)]+')\\b').test(t));if(c||estricta)return c||null;return L.find(x=>nz(x)==='otros'||nz(x)==='otros ingresos')||L[0]||''}
+const HINTG={supermercado:'super|coto|carrefour|chango|jumbo|verduleria|carniceria|almacen|vea|changomas|walmart|panaderia|fiambreria|dietetica',transporte:'nafta|uber|cabify|sube|colectivo|peaje|estacionamiento|taxi|combustible|subte|tren|didi|ypf|shell|axion|cochera|remis|bondi',salidas:'cine|bar|restaurante|cena|almuerzo|birra|cerveza|cafe|pizza|boliche|helado|resto|merienda|asado|sushi|hamburguesa|rappi|pedidosya|delivery|teatro|recital|fernet|trago|previa|empanadas',servicios:'luz|gas|agua|internet|celular|netflix|spotify|expensas|alquiler|telefono|cable|flow|claro|movistar|edenor|edesur|metrogas|youtube|disney|hbo|icloud|seguro',impuestos:'monotributo|autonomos|abl|patente|arba|afip|ganancias|iva|rentas',salud:'farmacia|medico|dentista|prepaga|remedios|kinesio|psicologo|oculista|analisis|osde|swiss|galeno|medicus',hogar:'ferreteria|muebles|limpieza|pintura|easy|sodimac|ikea|plomero|electricista|jardin',mascotas:'veterinaria|petshop|mascota|alimento balanceado',educacion:'curso|colegio|universidad|libreria|libros|clases',ropa:'ropa|zapatillas|remera|jean|campera|zapatos',viajes:'hotel|vuelo|pasaje|airbnb|aerolineas',sueldo:'sueldo|salario|honorarios|aguinaldo',ventas:'venta|vendi|mercadolibre'};
+function catDe(t,tipo,estricta){const L=tipo==='Gasto'?S.categorias:S.catIng;const c=L.find(x=>wsG(x).length&&wsG(x).every(w=>hasG(w,t)))||catMem(t,L)||L.find(x=>HINTG[nz(x)]&&new RegExp('\\b('+HINTG[nz(x)]+')\\b').test(t));if(c||estricta)return c||null;return L.find(x=>nz(x)==='otros'||nz(x)==='otros ingresos')||L[0]||''}
 function pagoDe(t,tipo){const tj=tjEn(t);if(tj.length===1&&tipo==='Gasto')return 'tarjeta:'+tj[0].id;const AL={cash:'efectivo',transferi:'transferencia',debito:'debito'};const md=S.medios.find(m=>wsG(m).every(w=>hasG(w,t))||Object.keys(AL).some(k=>hasG(k,t)&&nz(m)===AL[k]));return md?'medio:'+md:null}
 function montoDe(sn){const low=nz(sn),pal=low.match(/\b(\d+(?:[.,]\d+)?)\s*(palos?|millones?|millon)\b/),mil=low.match(/\b(\d+(?:[.,]\d+)?)\s*(mil|lucas?|k)\b/);if(pal)return Math.round(Number(pal[1].replace(',','.'))*1000000*100)/100;if(mil)return Math.round(Number(mil[1].replace(',','.'))*1000*100)/100;const c=sn.match(/\$?\s*\d{1,3}(?:[.,]\d{3})+(?:,\d{1,2})?|\$?\s*\d+(?:,\d{1,2})?/);return c?num(c[0].replace(/\$/g,'').trim()):0}
 const limpia=o=>o.replace(FR,' ').replace(/\b(?:el\s+)?\d{1,2}[\/-]\d{1,2}(?:[\/-]\d{2,4})?\b/gi,' ').replace(/\b(?:el\s+)?\d{1,2}\s+de\s+(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)(?:\s+de\s+\d{4})?\b/gi,' ').replace(/\b(?:en\s+)?\d{1,2}\s+cuotas?\b/gi,' ').replace(/\bd[ií]as?\s+\d{1,2}\b/gi,' ');
@@ -647,13 +651,13 @@ function cfgDe(o){
  const esV=/\b(vencimientos?|vence)\b/.test(t)&&/\b(agrega|agregar|agregame|carga|cargar|cargame|anota|anotar|suma|sumar|pone|poner|nuevo|nueva|crea|crear)\b/.test(t)&&(monto>0||expl);
  if(!(esS||esP||esF||esV))return null;
  if(esS)return{ok:true,op:{k:'saldo',monto:monto,fecha:fechaDe(t)}};
- if(esP){const cat=catDe(t,'Gasto',true);if(!cat)return{ok:false,preg:'¿Para qué categoría? Tenés: '+S.categorias.join(', ')+'.'};return{ok:true,op:{k:'pres',cat:cat,monto:monto}}}
+ if(esP){const cat=catDe(t,'Gasto',true);if(!cat)return{ok:false,preg:'¿Para qué categoría? Tenés: '+S.categorias.join(', ')+'.',opts:S.categorias.slice()};return{ok:true,op:{k:'pres',cat:cat,monto:monto}}}
  const tipo=/\b(ingreso|ingresos|sueldo|cobro)\b/.test(t)?'Ingreso':'Gasto';
  const desc=descCfg(sn);
  if(!desc)return{ok:false,preg:'¿Qué concepto es? (por ejemplo Netflix, Alquiler)'};
  const cat=catDe(t,tipo,false);let pago=pagoDe(t,tipo);
  if(esF){
-  if(!pago)return{ok:false,preg:'¿Con qué lo pagás? Opciones: '+pagoOpciones(tipo).map(x=>x[1]).join(', ')+'.'};
+  if(!pago)return{ok:false,preg:'¿Con qué lo pagás? Opciones: '+pagoOpciones(tipo).map(x=>x[1]).join(', ')+'.',opts:pagoOpciones(tipo).map(x=>x[1])};
   const dm=t.match(/\bdias?\s+(\d{1,2})\b/),dia=dm?Number(dm[1]):0;
   if(!(dia>=1&&dia<=31))return{ok:false,preg:'¿Qué día del mes? (1 a 31)'};
   return{ok:true,op:{k:'fijo',tipo:tipo,desc:desc,monto:monto,dia:dia,cat:cat,pago:pago}};
@@ -708,9 +712,10 @@ function responderCh(tx){
  const pc={};g.forEach(m=>{const c=m.cat||'Sin categoría';pc[c]=(pc[c]||0)+m.monto});const top=Object.keys(pc).sort((a,b)=>pc[b]-pc[a]).slice(0,5);
  return 'Resumen '+(lab==='el mes pasado'?'del mes pasado':'de '+lab)+' ('+moneda+'):\nGastos: '+fmt(sumM(g),moneda)+'\nIngresos: '+fmt(sumM(ing),moneda)+'\nBalance: '+fmt(sumM(ing)-sumM(g),moneda)+(top.length?'\n\nPrincipales gastos:\n'+top.map(c=>'• '+c+': '+fmt(pc[c])).join('\n'):'');
 }
-function chatOkF(){const op=V.pend;if(!op)return;if(op.k==='varios')return ejecutarVarios(op);if(op.k==='borrarMov'){const ids=op.ids||[op.id];tomb(ids);S.movs=S.movs.filter(m=>ids.indexOf(m.id)<0);save();V.pend=null;V.chat.push({r:'b',t:'Movimiento eliminado.'});return}if(op.k)return cfgOk(op);V.f={tipo:op.tipo,monto:String(op.monto),desc:op.desc,cat:op.cat,pago:op.pago,fecha:op.fecha,cuotas:String(op.cuotas),moneda:op.moneda||'ARS'};guardarMov();if(V.f){V.chat.push({r:'b',t:'No pude registrarlo: '+V.err});V.f=null;V.err=''}else V.chat.push({r:'b',t:'✅ Registrado:\n'+resumenOp(op)});V.pend=null;V.ctx=''}
+function chatOkV1(){const op=V.pend;if(!op)return;if(op.k==='varios')return ejecutarVarios(op);if(op.k==='borrarMov'){const ids=op.ids||[op.id];tomb(ids);S.movs=S.movs.filter(m=>ids.indexOf(m.id)<0);save();V.pend=null;V.chat.push({r:'b',t:'Movimiento eliminado.'});return}if(op.k)return cfgOk(op);V.f={tipo:op.tipo,monto:String(op.monto),desc:op.desc,cat:op.cat,pago:op.pago,fecha:op.fecha,cuotas:String(op.cuotas),moneda:op.moneda||'ARS'};guardarMov();if(V.f){V.chat.push({r:'b',t:'No pude registrarlo: '+V.err});V.f=null;V.err=''}else V.chat.push({r:'b',t:'✅ Registrado:\n'+resumenOp(op)});V.pend=null;V.ctx=''}
 function separarMovimientosChat(tx){
  const text=nz(tx).trim();
+ if(/^[¿¡\s]*(cuanto|cuantos|cuantas|que|cual|cuales|cuando|como|en que|decime|mostrame|y)\b/.test(text)||/\?\s*$/.test(tx))return null;
  // Segmenta mensajes con verbos explícitos repetidos, conservando cada operación independiente.
  const re=/\s+(?=(?:gast[eé]|pagu[eé]|compr[eé]|abon[eé]|cobr[eé]|recib[ií]|ingres[eé]|transfer[ií]|vend[ií])\s+)/ig;
  let parts=text.split(re).map(x=>x.trim()).filter(Boolean);
@@ -743,7 +748,307 @@ function comandoGestionChat(tx){
  }
  return null;
 }
-function procesarChat(tx){
+/* ===================== CHAT v2 (módulo nuevo; el parser anterior queda como respaldo: procesarChatV1) ===================== */
+const c2lev=(a,b)=>{if(a===b)return 0;const m=a.length,n=b.length;if(!m||!n)return Math.max(m,n);let p=[];for(let j=0;j<=n;j++)p[j]=j;for(let i=1;i<=m;i++){const c=[i];for(let j=1;j<=n;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c}return p[n]};
+const C2QV='cuanto cuantos cuantas resumen presupuesto presupuestos vencimiento vencimientos ultimos ultimas ultimo tarjeta tarjetas cierra cierre cierran proxima proximo semana promedio mayor comparame balance efectivo transferencia debito credito supermercado gastos ingresos categoria deshacer repetir borrar eliminar editar cambiar agregar rendimiento rendimientos feriado historial comercios billetera billeteras movimientos'.split(' ');
+const C2COM=('pesos cuotas dolares euros manana anoche anteayer mensual mensuales fijos vence sueldos ventas venta ultima ultimos cuanto cuantos gaste gastos pagos agrega agrego agregue agregame medio medios cuando donde quien cuales cual pasa pasar pasame paso cambia cambio cierra hacer pagar compra compras dinero plata semanal semanas meses tarde noche esta este estos estas misma mismo todos todas primera primero segundo tercero pasado pasada otros otras ultimo cuenta cuentas cobros cobra debito credito efectivo transferi nueva nuevo nuevas saldo saldos fecha fechas monto montos total tengo tiene tienen tenes puedo quiero queda quedan sobra falta faltan mismos categoria categorias').split(' ');
+function c2vocab(){const s=new Set(C2QV);const add=a=>a.forEach(x=>wsG(x).forEach(w=>s.add(w)));add(S.tarjetas.map(t=>t.nombre));add(S.medios);add(S.categorias);add(S.catIng);if(S.rend)add(S.rend.b.map(b=>b.nombre));Object.keys(S.memoria||{}).forEach(k=>wsG(k).forEach(w=>s.add(w)));Object.keys(HINTG).forEach(k=>{s.add(k);HINTG[k].split('|').forEach(w=>s.add(w))});Object.keys(MESES).forEach(w=>s.add(w));['domingo','lunes','martes','miercoles','jueves','viernes','sabado'].forEach(w=>s.add(w));return [...s].filter(w=>w.length>=4)}
+function autocorregir(tx){const voc=c2vocab(),known=new Set(voc.concat(VG.split('|'),VID.split('|'),C2COM));return tx.replace(/[A-Za-zÁÉÍÓÚÜáéíóúüÑñ]{5,}/g,w=>{const n=nz(w);if(known.has(n))return w;let best=null,bd=9,tie=false;voc.forEach(c=>{if(c[0]!==n[0]||Math.abs(c.length-n.length)>2)return;const lim=c.length>=8?2:1,d=c2lev(n,c);if(d<=lim){if(d<bd){bd=d;best=c;tie=false}else if(d===bd&&c!==best)tie=true}});return best&&!tie?best:w})}
+/* números en palabras */
+const C2NW={un:1,uno:1,una:1,dos:2,tres:3,cuatro:4,cinco:5,seis:6,siete:7,ocho:8,nueve:9,diez:10,once:11,doce:12,trece:13,catorce:14,quince:15,dieciseis:16,diecisiete:17,dieciocho:18,diecinueve:19,veinte:20,veintiun:21,veintiuno:21,veintiuna:21,veintidos:22,veintitres:23,veinticuatro:24,veinticinco:25,veintiseis:26,veintisiete:27,veintiocho:28,veintinueve:29,treinta:30,cuarenta:40,cincuenta:50,sesenta:60,setenta:70,ochenta:80,noventa:90,cien:100,ciento:100,doscientos:200,doscientas:200,trescientos:300,trescientas:300,cuatrocientos:400,cuatrocientas:400,quinientos:500,quinientas:500,seiscientos:600,seiscientas:600,setecientos:700,setecientas:700,ochocientos:800,ochocientas:800,novecientos:900,novecientas:900};
+const C2UNI=/^(pesos?|pesitos|mangos|lucas?|palos?|dolares|dolar|usd|euros?|k|gambas?|cuotas?|pagos)$/;
+function numPal(tx){
+ tx=tx.replace(/\bmedio\s+palo\b/gi,'0,5 palos').replace(/\bpalo\s+y\s+medio\b/gi,'1,5 palos').replace(/\bluca\s+y\s+media\b/gi,'1,5 lucas');
+ const P=tx.split(/(\s+)/),tk=j=>nz(P[j]||'').replace(/[^a-z0-9]/g,''),isN=w=>C2NW[w]!==undefined,isS=w=>w==='mil'||w==='millon'||w==='millones';
+ const out=[];let i=0;
+ while(i<P.length){
+  const w=tk(i);
+  if(i%2===0&&(isN(w)||(w==='mil'&&(isN(tk(i+2))||C2UNI.test(tk(i+2)))))){
+   let j=i,tot=0,cur=0,esc=false,cien=false,last=i;
+   while(j<P.length){const x=tk(j);
+    if(isN(x)){cur+=C2NW[x];if(C2NW[x]>=100)cien=true;last=j}
+    else if(isS(x)){tot+=(cur||1)*(x==='mil'?1000:1000000);cur=0;esc=true;last=j}
+    else if(x==='y'&&isN(tk(j+2))&&(isN(tk(j-2))||isS(tk(j-2)))&&!(C2NW[tk(j-2)]>=100&&C2NW[tk(j+2)]>=100)){}
+    else break;
+    j+=2}
+   const nxt=tk(last+2),val=tot+cur,uni=C2UNI.test(nxt),soloUn=(last===i&&(w==='un'||w==='una'||w==='uno'));
+   if(val>0&&(esc||cien||uni)&&!(soloUn&&!uni)){out.push(String(val));i=last+1;continue}
+  }
+  out.push(P[i]);i++}
+ return out.join('').replace(/(\d+(?:[.,]\d+)?)\s*gambas?\b/gi,(m,n)=>String(Math.round(Number(n.replace(',','.'))*100)))
+}
+/* fechas relativas -> dd/mm/aaaa (el parser viejo ya entiende ese formato y lo limpia de la descripción) */
+const c2dm=iso=>iso.slice(8,10)+'/'+iso.slice(5,7)+'/'+iso.slice(0,4);
+const C2DS={domingo:0,lunes:1,martes:2,miercoles:3,jueves:4,viernes:5,sabado:6};
+const C2AI=s=>new RegExp(s.replace(/[aeiou]/g,c=>'['+c+({a:'á',e:'é',i:'í',o:'ó',u:'ú'})[c]+']'),'gi');
+function fechasRel(tx){
+ const hy=hoy(),hd=new Date(hy+'T12:00:00').getDay(),W={un:1,una:1,uno:1,dos:2,tres:3,cuatro:4,cinco:5,seis:6,siete:7,ocho:8,nueve:9,diez:10,once:11,doce:12};
+ tx=tx.replace(C2AI('hace\\s+(\\d{1,3}|un|una|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce)\\s+(dias?|semanas?|meses|mes)\\b'),(m,n,u)=>{const k=/^\d/.test(n)?Number(n):W[nz(n)];u=nz(u);return c2dm(u.indexOf('dia')===0?addDays(hy,-k):u.indexOf('sem')===0?addDays(hy,-7*k):addMonths(hy,-k))});
+ tx=tx.replace(C2AI('la\\s+semana\\s+pasada'),()=>c2dm(addDays(hy,-7)));
+ tx=tx.replace(C2AI('pasado\\s+ma[nñ]ana'),()=>c2dm(addDays(hy,2)));
+ tx=tx.replace(C2AI('anteanoche'),()=>c2dm(addDays(hy,-2)));
+ tx=tx.replace(C2AI('(?:el\\s+)?(domingo|lunes|martes|miercoles|jueves|viernes|sabado)\\s+pasado'),(m,d)=>{const dest=C2DS[nz(d)],delta=((hd-dest+7)%7)||7;return c2dm(addDays(hy,-delta))});
+ tx=tx.replace(C2AI('(?:a\\s+|para\\s+|el\\s+)?(?:fin|final|fines)\\s+de\\s+mes'),()=>{const [y,m]=ymd(hy);return c2dm(addDays(addMonths(y+'-'+pad(m)+'-01',1),-1))});
+ tx=tx.replace(C2AI('(?:a\\s+|para\\s+|el\\s+)?(?:principio|inicio|comienzo)s?\\s+de\\s+mes'),()=>{const [y,m]=ymd(hy);return c2dm(addMonths(y+'-'+pad(m)+'-01',1))});
+ return tx}
+function preproc(tx,noF){tx=String(tx||'');return autocorregir(numPal(noF?tx:fechasRel(tx))).replace(/\b(\d{1,2})\s+pagos\b/gi,'$1 cuotas')}
+/* ---------- journal de deshacer ---------- */
+V.journal=V.journal||[];
+function c2snap(keys){return keys.map(k=>[k,S[k]===undefined?undefined:JSON.stringify(S[k])])}
+function c2push(l,sn){const ch=sn.some(([k,v])=>(S[k]===undefined?undefined:JSON.stringify(S[k]))!==v);if(!ch)return;V.journal.push({l:l,u:()=>{sn.forEach(([k,v])=>{S[k]=v===undefined?undefined:JSON.parse(v)});save()}});if(V.journal.length>15)V.journal.shift()}
+function conJournal(l,keys,fn){const sn=c2snap(keys),r=fn();c2push(l,sn);return r}
+function undoChat(){const b=(m)=>V.chat.push({r:'b',t:m});if(V.pend){V.pend=null;V.ctx='';V.cx=null;return b('Descarté lo que estaba pendiente. No se guardó nada.')}const j=V.journal.pop();if(!j)return b('No tengo nada para deshacer en esta sesión.');j.u();b('↩️ Deshice: '+j.l+'.')}
+/* ---------- confirmaciones ---------- */
+function keysFor(op){if(!op)return[];if(op.k==='varios'||!op.k)return['movs'];if(op.k==='borrarMov')return['movs','bor'];if(op.k==='pres')return['pres'];if(op.k==='fijo')return['fijos','movs'];if(op.k==='vto')return['vtos'];return[]}
+function ejecutarX2(op){const sn=c2snap(op.snap||[]);let m;try{m=op.run()}catch(e){m='No pude hacerlo: '+(e&&e.message||e)}c2push(op.l||'la última acción',sn);V.pend=null;V.ctx='';V.chat.push({r:'b',t:m&&m.charAt?m:'✅ Listo.'});}
+function chatOkF(){const op=V.pend;if(!op)return;if(op.k==='x2')return ejecutarX2(op);
+ if(op.k==='saldo'){chatOkV1();if(S.rend&&(S.rend.undoSaldo||[]).length)V.journal.push({l:'el saldo real',u:()=>{if(S.rend&&(S.rend.undoSaldo||[]).length)act('undoSaldo',{})}});return}
+ const keys=keysFor(op),sn=c2snap(keys),before=new Set(S.movs.map(m=>m.id));chatOkV1();c2push(op.k==='borrarMov'?'el borrado':op.k==='varios'?'los movimientos cargados':op.k?'la configuración':'el movimiento cargado',sn);V.lastIds=S.movs.filter(m=>!before.has(m.id)).map(m=>m.id)}
+/* ---------- utilidades ---------- */
+function matchEnt(arr,t,nm){let best=null,bs=0,tie=false;arr.forEach(x=>{const ws=wsG(nm(x)).filter(w=>w.length>=3),sc=ws.filter(w=>hasG(w,t)).length;if(sc>bs){bs=sc;best=x;tie=false}else if(sc&&sc===bs)tie=true});return bs&&!tie?best:null}
+function proxDia(d,desde){desde=desde||hoy();const [y,m]=ymd(desde),mk=(yy,mm)=>{const nd=new Date(Date.UTC(yy,mm,0)).getUTCDate();return yy+'-'+pad(mm)+'-'+pad(Math.min(d,nd))};let f=mk(y,m);if(f<desde)f=mk(m===12?y+1:y,m===12?1:m+1);return f}
+function diaEn(iso,d){const [y,m]=ymd(iso),nd=new Date(Date.UTC(y,m,0)).getUTCDate();return y+'-'+pad(m)+'-'+pad(Math.min(d,nd))}
+function proxF(base){if(!base)return null;const h=hoy();let k=0;if(base>=h){while(k>-240&&addMonths(base,k-1)>=h)k--}else{while(k<240&&addMonths(base,k)<h)k++}return{prox:addMonths(base,k),prev:addMonths(base,k-1)}}
+function tjInfo(t){const c=proxF(t.cierre),v=proxF(t.vencimiento),h=hoy();return{t:t,cp:c.prox,ult:c.prox===h?h:c.prev,vp:v?v.prox:null,va:v?v.prev:null}}
+const C2CAP=s=>s.replace(/\s+/g,' ').trim().replace(/^./,c=>c.toUpperCase());
+const C2MOV=/\b(gaste|gasto|pague|pago|compre|abone|cobre|cobro|ingrese|recibi|vendi|transferi)\b/;
+const c2lista=(it)=>it.map(x=>'• '+x).join('\n');
+const c2opts=a=>a.length?a:undefined;
+const c2catNom=term=>S.categorias.concat(S.catIng).find(c=>wsG(c).length&&wsG(c).every(w=>hasG(w,term)));
+function fechaCerca(t){const hy=hoy(),Y=ymd(hy)[0];let m=t.match(/\b(\d{1,2})[\/-](\d{1,2})(?:[\/-](\d{2,4}))?\b/),d,mo,y;if(m){d=+m[1];mo=+m[2];y=m[3]?(+m[3]<100?2000+ +m[3]:+m[3]):null}else{m=t.match(new RegExp('\\b(\\d{1,2})\\s+de\\s+('+Object.keys(MESES).join('|')+')\\b'));if(!m)return fechaDe(t);d=+m[1];mo=MESES[m[2]];y=null}if(y)return isoOk(y,mo,d)||fechaDe(t);let best=null,bd=1e9;[Y-1,Y,Y+1].forEach(yy=>{const f=isoOk(yy,mo,d);if(f){const k=Math.abs(dias(f,hy));if(k<bd){bd=k;best=f}}});return best||fechaDe(t)}
+const c2dateExp=t=>/\b\d{1,2}[\/-]\d{1,2}\b/.test(t)||/\b\d{1,2}\s+de\s+[a-z]+/.test(t);
+/* ---------- memoria de comercios ---------- */
+function catMem(t,lista){const m=S.memoria||{};for(const k of Object.keys(m).sort((a,b)=>b.length-a.length)){const ws=wsG(k);if(ws.length&&ws.every(w=>hasG(w,t))){const c=lista.find(x=>nz(x)===nz(m[k]));if(c)return c}}return null}
+function comandoMemoria(tx,t){
+ const todas=S.categorias.concat(S.catIng);
+ if(/^(que|cuales|cual)\s+(sabes|recordas|aprendiste).*(comercios|reglas)|^(mis|ver|mostrame)\s+(comercios|reglas)\b|^comercios\b/.test(t)){const k=Object.keys(S.memoria||{});return k.length?'Comercios que recuerdo:\n'+c2lista(k.map(x=>C2CAP(x)+' → '+S.memoria[x]))+'\n\nPara olvidar uno: “olvidá Coto”. Para enseñarme: “Coto es Supermercado”.':'Todavía no aprendí comercios. Enseñame con: “Coto es Supermercado”.'}
+ let m=t.match(/^(?:olvida\w*|borra\w*|saca\w*)\s+(?:el\s+comercio\s+|la\s+regla\s+de\s+)?(.+)$/);
+ if(m&&S.memoria){const q=m[1].trim(),k=Object.keys(S.memoria).find(x=>x===q||wsG(q).length&&wsG(q).every(w=>hasG(w,x)));if(k){conJournal('olvidar '+k,['memoria'],()=>{delete S.memoria[k];save()});return 'Listo, olvidé «'+C2CAP(k)+'».'}}
+ m=t.match(/^(?:aprende\w*|aprendete|recorda\w*|anota\w*|guarda\w*)?\s*(?:que\s+)?([a-z0-9 ]{2,30}?)\s+(?:es|son|va en|va a|va como|cuenta como|se clasifica como|como)\s+(?:de\s+)?(?:la\s+categoria\s+)?(?:de\s+)?([a-z ]+)$/);
+ if(m&&!/\d/.test(m[1])&&!/^(cuanto|que|cual|cuando|como)\b/.test(m[1])){const cat=todas.find(c=>nz(c)===m[2].trim())||todas.find(c=>wsG(c).length&&wsG(c).every(w=>hasG(w,m[2])));if(cat){const key=m[1].trim().replace(/^(el|la|los|las)\s+/,'');conJournal('la regla '+key,['memoria'],()=>{S.memoria=S.memoria||{};S.memoria[key]=cat;save()});return 'Listo: de ahora en más «'+C2CAP(key)+'» va a '+cat+'.'}}
+ return null}
+/* ---------- consultas: tarjetas ---------- */
+function consTarjetas(t){
+ if(/\b(agrega|agregar|agregame|carga|cargar|cargame|anota|anotar|crea|crear|nueva|nuevo|cambia|cambiar|pasa|pasame|mueve|modifica|actualiza|pone|poner|borra|elimina)\w*\b/.test(t)&&!/\?/.test(t))return null;
+ const hy=hoy(),mt=/\btarjetas?\b/.test(t),tj=tjEn(t);
+ const ic=/\b(cierra|cierre|cierran|cerro|cerraron|cerrar|cerrada|cerradas)\b/.test(t),iv=/\b(vence|vencen|vencer|vencimiento|vencimientos)\b/.test(t);
+ if(!(mt||tj.length||((ic||iv)&&/\b(proxima|ultima|primera)\b/.test(t))))return null;
+ if(!S.tarjetas.length)return mt?'Todavía no cargaste tarjetas. Podés decirme: “agregá la tarjeta Visa, cierra el 25 y vence el 5”.':null;
+ const I=S.tarjetas.map(tjInfo),lk=(x)=>({t:'Ver '+x.t.nombre,go:'tar',id:x.t.id}),F=x=>fd(x)+' ('+rel(dias(x,hy))+')';
+ const todos=I.map(lk);
+ if(/\bultim[oa]\b/.test(t)&&/\b(cerr\w*)\b/.test(t)&&!tj.length){const s=I.slice().sort((a,b)=>b.ult.localeCompare(a.ult));return{t:'La última en cerrar fue '+s[0].t.nombre+': cerró el '+F(s[0].ult)+'.'+(s.length>1?'\nLe siguen:\n'+c2lista(s.slice(1).map(x=>x.t.nombre+': '+F(x.ult))):''),links:[lk(s[0])]}}
+ if(/\b(proxim[oa]|siguiente|primer[oa]?)\b/.test(t)&&/\b(cerrar|cierra|cierre)\b/.test(t)&&!tj.length||/\bque tarjeta (cierra|cerra)\b.*\b(primero|antes|ahora|pronto)\b/.test(t)){const s=I.slice().sort((a,b)=>a.cp.localeCompare(b.cp));return{t:'La próxima en cerrar es '+s[0].t.nombre+': cierra el '+F(s[0].cp)+'.'+(s.length>1?'\nDespués:\n'+c2lista(s.slice(1).map(x=>x.t.nombre+': '+F(x.cp))):''),links:[lk(s[0])]}}
+ if(/\b(proxim[oa]|siguiente|primer[oa]?)\b/.test(t)&&/\b(vencer|vence|vencimiento)\b/.test(t)&&!tj.length&&(mt||/\bproxima\b/.test(t))){const c=I.filter(x=>x.vp);if(!c.length)return 'Tus tarjetas no tienen fecha de vencimiento cargada.';const s=c.sort((a,b)=>a.vp.localeCompare(b.vp));return{t:'La próxima en vencer es '+s[0].t.nombre+': vence el '+F(s[0].vp)+'.'+(s.length>1?'\nDespués:\n'+c2lista(s.slice(1).map(x=>x.t.nombre+': '+F(x.vp))):''),links:[lk(s[0])]}}
+ if(mt&&/\b(mas|mayor)\b.*\b(gasto|consumo|gastado|debo|deuda|resumen)\b/.test(t)){const s=S.tarjetas.map(x=>({x:x,v:resTarj(x)})).sort((a,b)=>b.v-a.v);return{t:'La tarjeta con más consumo en su ciclo actual es '+s[0].x.nombre+': '+fmt(s[0].v)+'.\n'+c2lista(s.map(y=>y.x.nombre+': '+fmt(y.v))),links:todos}}
+ if(mt&&/\b(cuanto|total)\b.*\b(debo|pagar|pago|resumen|resumenes|gaste|gastado|consumo)\b|\bresumenes\b/.test(t)&&!tj.length){const s=I.map(x=>({i:x,v:resTarj(x.t)}));const tot=s.reduce((a,y)=>a+y.v,0);return{t:'Resúmenes de tus tarjetas (ciclo actual):\n'+c2lista(s.map(y=>y.i.t.nombre+': '+fmt(y.v)+(y.i.vp?' · vence '+F(y.i.vp):'')))+'\nTotal: '+fmt(tot),links:todos}}
+ if(mt&&!tj.length&&(/\b(cuando|que dias?|fechas?|cuales?)\b/.test(t)||/\bmis tarjetas\b/.test(t))&&(ic||iv||/\bresumen/.test(t))){const s=I.slice().sort((a,b)=>a.cp.localeCompare(b.cp));return{t:'Tus tarjetas:\n'+c2lista(s.map(x=>x.t.nombre+': cierra '+F(x.cp)+(x.vp?' · vence '+F(x.vp):'')+' · resumen '+fmt(resTarj(x.t)))),links:todos}}
+ if(tj.length===1&&(ic||iv||/\b(resumen|debo|pagar|dias|faltan?|falta)\b/.test(t))&&!/\b(gaste|gastos)\b.*\b(en|con)\b/.test(t)){const x=tjInfo(tj[0]),tt=tj[0];return{t:tt.nombre+':\n• Cierra el '+F(x.cp)+'\n'+(x.vp?'• Vence el '+F(x.vp)+'\n':'')+'• Último cierre: '+F(x.ult)+'\n• Resumen del ciclo ('+fd(addDays(tt.anterior,1))+' al '+fd(tt.cierre)+'): '+fmt(resTarj(tt)),links:[lk(x)]}}
+ return null}
+/* ---------- consultas: períodos, búsqueda, rendimientos ---------- */
+function periodoDe(t){const hy=hoy(),[Y,M]=ymd(hy),wd=new Date(hy+'T12:00:00').getDay(),lun=addDays(hy,-((wd+6)%7));let m;
+ if(/\banteayer\b/.test(t))return{d:addDays(hy,-2),h:addDays(hy,-2),lab:'anteayer'};
+ if(/\bayer\b/.test(t))return{d:addDays(hy,-1),h:addDays(hy,-1),lab:'ayer'};
+ if(/\bhoy\b/.test(t))return{d:hy,h:hy,lab:'hoy'};
+ if(/semana pasada|semana anterior/.test(t))return{d:addDays(lun,-7),h:addDays(lun,-1),lab:'la semana pasada'};
+ if(/esta semana|en la semana/.test(t))return{d:lun,h:hy,lab:'esta semana'};
+ if((m=t.match(/ultim[oa]s?\s+(\d{1,3})\s+dias/)))return{d:addDays(hy,-(Number(m[1])-1)),h:hy,lab:'los últimos '+m[1]+' días'};
+ if(/ultima semana/.test(t))return{d:addDays(hy,-6),h:hy,lab:'los últimos 7 días'};
+ if(/ano pasado/.test(t))return{d:(Y-1)+'-01-01',h:(Y-1)+'-12-31',lab:'el año pasado'};
+ if(/este ano|en el ano|\bdel ano\b/.test(t))return{d:Y+'-01-01',h:hy,lab:'este año'};
+ if(/mes pasado|mes anterior/.test(t)){const f=addMonths(hy.slice(0,7)+'-01',-1);return{d:f,h:addDays(addMonths(f,1),-1),lab:'el mes pasado'}}
+ m=t.match(new RegExp('\\b(?:en|de|durante|del mes de)\\s+('+Object.keys(MESES).join('|')+')\\b'));
+ if(m){const mm=MESES[m[1]],yy=mm>M?Y-1:Y,f=yy+'-'+pad(mm)+'-01';return{d:f,h:addDays(addMonths(f,1),-1),lab:'en '+m[1]}}
+ return null}
+const PERMES=()=>{const hy=hoy();return{d:hy.slice(0,7)+'-01',h:hy,lab:'este mes'}};
+function movsPer(p,mon){return S.movs.filter(m=>m.fecha>=p.d&&m.fecha<=p.h&&(m.moneda||'ARS')===mon)}
+function rendBil(b,p){const R=S.rend;let tot=0;const ms=new Set();for(let f=p.d;f<=p.h;f=addDays(f,1))ms.add(f.slice(0,7));ms.forEach(mes=>{filasMes(mes).forEach(x=>{if(x.f>=p.d&&x.f<=p.h)tot+=b?Number((x.por||{})[b.id])||0:Number(x.rend)||0})});return Math.round(tot*100)/100}
+function consGen(t){
+ const hy=hoy(),mon=V.monedaVista||'ARS',lkm=(q,cat)=>({t:'Ver en Movimientos',go:'mov',q:q||'',cat:cat||''});
+ const preg=/^(cuanto|cuantos|cuantas|que|cuales|cual|cuando|mostrame|mostra|decime|ver|busca|buscame|como|en que)\b/.test(t)||/\?\s*$/.test(t);
+ const kw=/\b(promedio|mayor gasto|gasto mas|comparame|comparar|cuantas veces|todos los|todas las|buscame|busca)\b/.test(t);
+ if(!(preg||kw)||(C2MOV.test(t)&&!preg))return null;
+ let m;
+ /* cuándo llego a X */
+ if(/\bcuando\b.*\b(llego|tengo|alcanzo|supero|paso|junto)\b/.test(t)&&S.rend){const obj=montoDe(limpia(t));if(obj>0){const R=S.rend,n=dias(hy,R.fecha)+365;const P=n>0?proy(Math.min(n,800)):[];const hit=P.find(x=>x.saldo>=obj&&x.f>=hy);const base=P.find(x=>x.f===hy);if(base&&base.saldo>=obj)return 'Según la proyección ya tenés '+fmt(base.saldo)+' hoy, por encima de '+fmt(obj)+'.';return hit?{t:'Según la proyección de rendimientos llegás a '+fmt(obj)+' el '+fd(hit.f)+' ('+rel(dias(hit.f,hy))+'): saldo estimado '+fmt(hit.saldo)+'.',links:[{t:'Ver Rendimientos',go:'ren'}]}:'No llego a '+fmt(obj)+' en el próximo año con la proyección actual (sin aportes nuevos).'}}
+ /* cuánto rindió */
+ if(/\b(cuanto|cuanta)\b.*\b(rindio|rinde|rindieron|gane|genero|rendimiento)\b|\bcuanto rinde\b/.test(t)){const R=S.rend;if(!R)return 'Todavía no cargaste tus billeteras (pestaña Rend.).';const p=periodoDe(t)||(/este mes/.test(t)?PERMES():{d:addDays(hy,-((new Date(hy+'T12:00:00').getDay()+6)%7)),h:hy,lab:'esta semana'}),b=matchEnt(R.b,t,x=>x.nombre);const v=rendBil(b,p);return{t:(b?b.nombre+' rindió':'Tus billeteras rindieron')+' '+fmt(v)+' '+p.lab+'.',links:[{t:'Ver Rendimientos',go:'ren'}]}}
+ /* posibilidad de gastar por día */
+ if(/\b(cuanto)\b.*\b(puedo|podria|me queda|queda|disponible)\b/.test(t)&&/\b(gastar|por dia|diario|al dia|queda)\b/.test(t)){const tj=tjEn(t);if(tj.length===1&&S.presTar[tj[0].id]){const x=tj[0],res=S.presTar[x.id]-resTarj(x),dd=Math.max(1,dias(x.cierre,hy)+1);return 'Con '+x.nombre+' te quedan '+fmt(res)+' de presupuesto hasta el cierre ('+fd(x.cierre)+', '+dd+' días): '+fmt(Math.max(0,res)/dd)+' por día.'}const tot=Object.keys(S.pres).reduce((a,c)=>a+S.pres[c],0);const mes=hy.slice(0,7),[y,mm]=ymd(hy),nd=new Date(Date.UTC(y,mm,0)).getUTCDate(),rest=nd-Number(hy.slice(8))+1;if(tot>0){const g=sumM(S.movs.filter(x=>x.tipo==='Gasto'&&x.fecha.indexOf(mes)===0&&S.pres[x.cat]!==undefined&&(x.moneda||'ARS')==='ARS'));const q=tot-g;return 'Entre tus presupuestos ('+fmt(tot)+') ya gastaste '+fmt(g)+'. Te quedan '+fmt(q)+' para '+rest+' días: '+fmt(Math.max(0,q)/rest)+' por día.'}const ms=S.movs.filter(x=>x.fecha.indexOf(mes)===0&&(x.moneda||'ARS')===mon),bal=sumM(ms.filter(x=>x.tipo==='Ingreso'))-sumM(ms.filter(x=>x.tipo==='Gasto'));return 'No definiste presupuestos. Con el balance del mes ('+fmt(bal,mon)+') podrías gastar '+fmt(Math.max(0,bal)/rest,mon)+' por día los '+rest+' días que quedan.'}
+ /* mayor gasto */
+ if(/\b(mayor|mas grande|mas caro|mas alto)\b.*\b(gasto|compra|movimiento)\b|\ben que gaste mas\b|\bgasto mas grande\b/.test(t)){const p=periodoDe(t)||PERMES(),g=movsPer(p,mon).filter(x=>x.tipo==='Gasto');if(!g.length)return 'No hay gastos en '+mon+' '+p.lab+'.';const top=g.slice().sort((a,b)=>b.monto-a.monto).slice(0,3),pc={};g.forEach(x=>{pc[x.cat||'Sin categoría']=(pc[x.cat||'Sin categoría']||0)+x.monto});const tc=Object.keys(pc).sort((a,b)=>pc[b]-pc[a])[0];return{t:'Tus mayores gastos '+p.lab+':\n'+c2lista(top.map(x=>x.desc+': '+fmt(x.monto,mon)+' ('+fd(x.fecha)+')'))+'\nLa categoría donde más gastaste: '+tc+' ('+fmt(pc[tc],mon)+').',links:[lkm('','')]}}
+ /* comparación */
+ if(/\b(compar\w*|contra|versus|vs|respecto)\b.*\bmes (pasado|anterior)\b|\bcomo voy\b/.test(t)){const dd=Number(hy.slice(8)),mes=hy.slice(0,7),ant=addMonths(mes+'-01',-1).slice(0,7);const f=(ms,tp,lim)=>sumM(S.movs.filter(x=>x.fecha.indexOf(ms)===0&&x.tipo===tp&&(x.moneda||'ARS')===mon&&(!lim||Number(x.fecha.slice(8))<=lim)));const a=f(mes,'Gasto'),b=f(ant,'Gasto',dd),bt=f(ant,'Gasto'),d=a-b;return 'Gastos '+mon+':\n• Este mes (hasta hoy): '+fmt(a,mon)+'\n• Mes pasado (hasta el día '+dd+'): '+fmt(b,mon)+'\n• Mes pasado completo: '+fmt(bt,mon)+'\n'+(b>0?(d>=0?'Vas '+fmt(d,mon)+' ('+Math.round(d/b*100)+'%) por encima':'Vas '+fmt(-d,mon)+' ('+Math.round(-d/b*100)+'%) por debajo')+' del mismo punto del mes pasado.':'No hay datos del mes pasado para comparar.')}
+ /* promedio */
+ if(/\bpromedio\b/.test(t)){const porSem=/\bsemana|semanal/.test(t),porMes=/\bmensual|por mes|al mes\b/.test(t);if(porMes){let tot=0,n=0;for(let k=1;k<=6;k++){const ms=addMonths(hy.slice(0,7)+'-01',-k).slice(0,7),v=sumM(S.movs.filter(x=>x.fecha.indexOf(ms)===0&&x.tipo==='Gasto'&&(x.moneda||'ARS')===mon));if(v>0){tot+=v;n++}}return n?'Promedio mensual de gastos (últimos '+n+' meses con datos): '+fmt(tot/n,mon)+'.':'Todavía no hay meses anteriores con gastos.'}const p=periodoDe(t)||PERMES(),g=movsPer(p,mon).filter(x=>x.tipo==='Gasto'),nd=Math.max(1,dias(p.h,p.d)+1),tot=sumM(g);return 'Gastos '+p.lab+': '+fmt(tot,mon)+' en '+nd+' día(s).\nPromedio '+(porSem?'semanal: '+fmt(tot/nd*7,mon):'diario: '+fmt(tot/nd,mon))+'.'}
+ /* búsqueda por texto */
+ const sinP=t.replace(/\b(hoy|ayer|anteayer|esta semana|semana pasada|mes pasado|este mes|este ano|ano pasado|en el ano|ultim[oa]s?\s+\d+\s+dias)\b/g,' ').replace(/\b(en|de|durante|del mes de)\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)\b/g,' ');
+ const bus=/\b(cuantas veces|todos los|todas las|buscame|busca|cuanto gaste (?:en|con|de)|cuanto (?:me )?(?:salio|costo|pague)|gastos? (?:de|en|con))\b/.test(sinP);
+ if(bus){m=sinP.match(/\b(?:de|en|con|a|al|a la|por)\s+(?:el\s+|la\s+|los\s+|las\s+)?([a-z0-9 ]{2,40}?)\s*\??$/);let term=m?m[1].trim():'';term=term.replace(/\b(gastos|movimientos|compras|pagos|veces)\b/g,' ').replace(/\s+/g,' ').trim();if(/^(los|las|el|la|un|una)$/.test(term))term='';
+  if(term&&!c2catNom(term)&&!tjEn(term).length&&!pagoDe(term,'Gasto')){const p=periodoDe(t),tw=wsG(term).filter(w=>w.length>1);let r=S.movs.filter(x=>tw.length&&tw.every(w=>nz(x.desc).indexOf(w)>-1)&&(x.moneda||'ARS')===mon);if(p)r=r.filter(x=>x.fecha>=p.d&&x.fecha<=p.h);
+   if(!r.length&&/\b(cuantas veces|todos los|todas las|buscame|busca)\b/.test(sinP))return 'No encontré movimientos con «'+C2CAP(term)+'»'+(p?' '+p.lab:'')+'.';
+   if(r.length){const g=r.filter(x=>x.tipo==='Gasto'),i=r.filter(x=>x.tipo==='Ingreso'),ord=r.slice().sort((a,b)=>b.fecha.localeCompare(a.fecha));
+   if(/\bcuantas veces\b/.test(sinP))return{t:'«'+C2CAP(term)+'»: '+r.length+' vez/veces'+(p?' '+p.lab:'')+'. Total gastado: '+fmt(sumM(g),mon)+'. Última vez: '+fd(ord[0].fecha)+' ('+rel(dias(ord[0].fecha,hy))+').',links:[lkm(term)]};
+   return{t:'«'+C2CAP(term)+'»'+(p?' '+p.lab:'')+': '+r.length+' movimiento(s) · gastos '+fmt(sumM(g),mon)+(i.length?' · ingresos '+fmt(sumM(i),mon):'')+'\n'+c2lista(ord.slice(0,8).map(x=>fd(x.fecha)+' '+x.desc+': '+(x.tipo==='Ingreso'?'+':'-')+fmt(x.monto,mon)))+(ord.length>8?'\n… y '+(ord.length-8)+' más.':''),links:[lkm(term)]}}}}
+ /* gasto/ingreso con período explícito (semana, año, mes puntual, ayer…) */
+ const p=periodoDe(t);
+ if(p&&/\b(cuanto|cuantos|cuantas)\b|\b(gastos|ingresos|resumen|balance)\b/.test(t)&&!/\b(rindio|rinde|tarjeta)\b/.test(t)){const ms=movsPer(p,mon),g=ms.filter(x=>x.tipo==='Gasto'),ing=ms.filter(x=>x.tipo==='Ingreso'),cat=catDe(t,'Gasto',true),tj=tjEn(t),pg=pagoDe(t,'Gasto');
+  if(tj.length===1){const e=g.filter(x=>x.pago==='tarjeta:'+tj[0].id);return{t:'Gastos con '+tj[0].nombre+' '+p.lab+': '+fmt(sumM(e),mon)+' ('+e.length+' movimientos).',links:[{t:'Ver '+tj[0].nombre,go:'tar',id:tj[0].id}]}}
+  if(cat){const e=g.filter(x=>x.cat===cat);return{t:'Gastaste '+fmt(sumM(e),mon)+' en '+cat+' '+p.lab+' ('+e.length+' movimientos).',links:[lkm('',cat)]}}
+  if(pg&&pg.indexOf('medio:')===0){const e=g.filter(x=>x.pago===pg);return 'Gastos con '+pagoNombre(pg)+' '+p.lab+': '+fmt(sumM(e),mon)+' ('+e.length+' movimientos).'}
+  if(/\bingres|cobr/.test(t)&&!/\bgast/.test(t))return 'Ingresos '+p.lab+': '+fmt(sumM(ing),mon)+' ('+ing.length+' movimientos).';
+  const pc={};g.forEach(x=>{const c=x.cat||'Sin categoría';pc[c]=(pc[c]||0)+x.monto});const top=Object.keys(pc).sort((a,b)=>pc[b]-pc[a]).slice(0,5);
+  return{t:'Resumen '+p.lab+' ('+mon+'):\nGastos: '+fmt(sumM(g),mon)+'\nIngresos: '+fmt(sumM(ing),mon)+'\nBalance: '+fmt(sumM(ing)-sumM(g),mon)+(top.length?'\n\nPrincipales gastos:\n'+c2lista(top.map(c=>c+': '+fmt(pc[c],mon))):''),links:[lkm('','')]}}
+ return null}
+/* ---------- gestión: masivo, repetir, devoluciones, editar el último ---------- */
+function lastMov(){if(V.lastIds&&V.lastIds.length){const m=S.movs.find(x=>x.id===V.lastIds[0]);if(m)return m}return S.movs[S.movs.length-1]||null}
+function opDeMov(m,fecha){return{tipo:m.tipo,monto:m.monto,desc:m.desc.replace(/\s+C\s+\d{2}\/\d{2}$/,''),cat:m.cat||'',pago:m.pago,fecha:fecha||hoy(),cuotas:1,moneda:m.moneda||'ARS'}}
+function comandoRepetir(tx,t){
+ let m=t.match(/^(?:repeti\w*|repite\w*|repetime|otra vez|de nuevo|lo mismo|mismo|igual|otro|otra)\b\s*(.*)$/);if(!m)return null;
+ const rest=m[1].trim().replace(/^(que\s+)?(el|la|lo|los|las)\s+/,'');
+ const dm=rest.match(/(?:de\s+)?(ayer|anteayer|hoy|\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)/);
+ if(dm&&/^(de |del )?(ayer|anteayer|\d)/.test(rest.replace(/^lo\s+/,''))||/^(lo\s+)?de\s+(ayer|anteayer)/.test(rest)||(!rest&&false)){const f=fechaDe(rest.indexOf('ayer')>-1||rest.indexOf('anteayer')>-1||/\d/.test(rest)?rest:'ayer');const ms=S.movs.filter(x=>x.fecha===f);if(!ms.length){V.chat.push({r:'b',t:'No hay movimientos cargados el '+fd(f)+'.'});return true}const ops=ms.map(x=>opDeMov(x));if(ops.length===1){V.pend=ops[0];V.chat.push({r:'b',t:'Repito lo del '+fd(f)+':\n'+resumenOp(ops[0]),op:ops[0]});return true}V.pend={k:'varios',ops:ops};V.chat.push({r:'b',t:'Repito los '+ops.length+' movimientos del '+fd(f)+' con fecha de hoy:\n'+ops.map((o,i)=>(i+1)+'. '+resumenOp(o)).join('\n\n'),op:V.pend});return true}
+ let src=null;
+ if(!rest||/^(ultimo|ultima|anterior|movimiento|gasto|ingreso)$/.test(rest)){src=lastMov();if(/^gasto$/.test(rest))src=S.movs.slice().reverse().find(x=>x.tipo==='Gasto');if(/^ingreso$/.test(rest))src=S.movs.slice().reverse().find(x=>x.tipo==='Ingreso')}
+ else{const ws=wsG(rest).filter(w=>w.length>1);src=S.movs.slice().sort((a,b)=>b.fecha.localeCompare(a.fecha)).find(x=>ws.length&&ws.every(w=>nz(x.desc).indexOf(w)>-1))}
+ if(!src){V.chat.push({r:'b',t:rest?'No encontré ningún movimiento parecido a «'+rest+'».':'Todavía no hay movimientos para repetir.'});return true}
+ const op=opDeMov(src);V.pend=op;V.chat.push({r:'b',t:'Repito «'+op.desc+'» con fecha de hoy:\n'+resumenOp(op),op:op});return true}
+function comandoMasivo(tx,t){
+ let m=t.match(/\b(pasa\w*|cambia\w*|mueve\w*|move\w*|pone\w*|reclasifica\w*|clasifica\w*)\b.*?\b(?:todos|todas)\b\s+(?:los\s+|las\s+)?(.+?)\s+\b(?:a|en|como|para)\b\s+(?:la\s+categoria\s+)?(?:de\s+)?(.+)$/);
+ if(m){const term=m[2].replace(/^(movimientos|gastos|ingresos)\s+de\s+/,'').trim(),cn=m[3].trim(),todas=S.categorias.concat(S.catIng);
+  const cat=todas.find(c=>nz(c)===cn)||todas.find(c=>wsG(c).length&&wsG(c).every(w=>hasG(w,cn)));
+  if(!cat){V.chat.push({r:'b',t:'No encontré la categoría «'+cn+'». Tenés: '+todas.join(', ')+'.',opts:c2opts(S.categorias)});return true}
+  const tw=wsG(term),ms=S.movs.filter(x=>tw.length&&tw.every(w=>nz(x.desc).indexOf(w)>-1));
+  if(!ms.length){V.chat.push({r:'b',t:'No encontré movimientos que contengan «'+C2CAP(term)+'».'});return true}
+  const op={k:'x2',l:'el cambio de categoría',snap:['movs','memoria'],txt:'',run:()=>{ms.forEach(x=>{x.cat=cat});S.memoria=S.memoria||{};S.memoria[term]=cat;save();return '✅ Pasé '+ms.length+' movimiento(s) de «'+C2CAP(term)+'» a '+cat+'. Y aprendí que «'+C2CAP(term)+'» va a '+cat+'.'}};
+  V.pend=op;V.chat.push({r:'b',t:'Voy a pasar '+ms.length+' movimiento(s) de «'+C2CAP(term)+'» a '+cat+' (total '+fmt(sumM(ms))+').\nPor ejemplo: '+ms.slice(-3).map(x=>x.desc+' '+fmt(x.monto)).join(' · ')+'\n¿Confirmás?',op:op});return true}
+ if(/\b(borra\w*|elimina\w*|saca\w*|quita\w*)\b/.test(t)&&/\b(todos|todas|ultimos|ultimas)\b/.test(t)){
+  let ms=[],lab='';const mu=t.match(/\bultim[oa]s\s+(\d{1,3})\b/),mt=t.match(/\b(?:todos|todas)\s+(?:los\s+|las\s+)?(?:movimientos\s+|gastos\s+|ingresos\s+)?(?:de\s+|del\s+)?(.+?)(?:\s+(?:de|del|en)\s+(?:este mes|mes pasado|el mes pasado|este ano|hoy|ayer|esta semana)|\s+(?:de|en)\s+(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre))?$/);
+  if(mu){const n=Math.min(Number(mu[1]),200);ms=S.movs.slice().sort((a,b)=>b.fecha.localeCompare(a.fecha)||S.movs.indexOf(b)-S.movs.indexOf(a)).slice(0,n);lab='los últimos '+ms.length+' movimientos'}
+  else if(mt){const term=mt[1].trim(),tw=wsG(term).filter(w=>!/^(los|las|de|del)$/.test(w));ms=S.movs.filter(x=>tw.length&&tw.every(w=>nz(x.desc).indexOf(w)>-1));const p=periodoDe(t);if(p)ms=ms.filter(x=>x.fecha>=p.d&&x.fecha<=p.h);lab='todos los movimientos de «'+C2CAP(term)+'»'+(p?' '+p.lab:'')}
+  else return null;
+  if(!ms.length){V.chat.push({r:'b',t:'No encontré movimientos para borrar.'});return true}
+  const ids=ms.map(x=>x.id),op={k:'x2',l:'el borrado masivo',snap:['movs','bor'],run:()=>{tomb(ids);S.movs=S.movs.filter(x=>ids.indexOf(x.id)<0);save();return '🗑️ Borré '+ids.length+' movimiento(s). Si te equivocaste, escribí “deshacé”.'}};
+  V.pend=op;V.chat.push({r:'b',t:'Voy a borrar '+lab+' ('+ms.length+', total '+fmt(sumM(ms))+'):\n'+c2lista(ms.slice(0,6).map(x=>fd(x.fecha)+' '+x.desc+' '+fmt(x.monto)))+(ms.length>6?'\n… y '+(ms.length-6)+' más.':'')+'\n¿Confirmás?',op:op});return true}
+ return null}
+function comandoDevolucion(tx,t){
+ if(!/\b(devolvieron|devolvio|devolvi|reintegraron|reintegro|reembolsaron|reembolso|devolucion)\b/.test(t))return null;
+ const sn=limpia(tx),monto=montoDe(sn);
+ if(!(monto>0)){V.chat.push({r:'b',t:'¿De cuánto fue la devolución?'});return true}
+ const q=t.replace(/\b(me|te|nos)\s+/g,' ').replace(/\b(devolvieron|devolvio|devolvi|reintegraron|reintegro|reembolsaron|reembolso|devolucion)\b/g,' ');
+ const mm=q.match(/\b(?:de|del)\s+(?:la\s+|el\s+|los\s+|las\s+|mi\s+|un\s+|una\s+)?(.+)$/),stop=new Set('de del la el los las mi un una por pesos peso mil lucas luca palos palo con en que fue hoy ayer'.split(' '));
+ let cand=[];if(mm)cand=wsG(mm[1]).filter(w=>w.length>2&&!/^\d/.test(w)&&!stop.has(w));
+ const orig=cand.length?S.movs.slice().sort((a,b)=>b.fecha.localeCompare(a.fecha)).find(x=>x.tipo==='Gasto'&&cand.some(w=>nz(x.desc).indexOf(w)>-1)):null;
+ if(!orig){V.chat.push({r:'b',t:cand.length?'No encontré la compra «'+cand.join(' ')+'». ¿De cuál es la devolución? Decime el nombre como lo cargaste.':'¿De qué compra es la devolución? Por ejemplo: “me devolvieron 5 mil de la zapatilla”.'});return true}
+ const fecha=fechaDe(t),esT=orig.pago.indexOf('tarjeta:')===0;
+ const op=esT?{tipo:'Gasto',monto:-monto,desc:'Reintegro '+orig.desc.replace(/\s+C\s+\d{2}\/\d{2}$/,''),cat:orig.cat||'',pago:orig.pago,fecha:fecha,cuotas:1,moneda:'ARS'}:{tipo:'Ingreso',monto:monto,desc:'Devolución '+orig.desc,cat:S.catIng.find(c=>nz(c)==='otros ingresos')||S.catIng[0]||'',pago:orig.pago,fecha:fecha,cuotas:1,moneda:orig.moneda||'ARS'};
+ V.pend=op;V.chat.push({r:'b',t:'Esto entendí:\n'+resumenOp(op)+'\n(Ligado a «'+orig.desc+'» del '+fd(orig.fecha)+(esT?'; resta del resumen de la tarjeta':'; entra como ingreso al mismo medio')+')',op:op});return true}
+function comandoEditarUltimo(tx,t){
+ if(C2MOV.test(t)&&!/\b(era|fue|corregi\w*|cambia\w*|en realidad|me equivoque)\b/.test(t))return null;
+ const cambio=/\b(cambia\w*|pone\w*|pasa\w*|pasale|corregi\w*|corrige|era|eran|fue|fueron|en realidad|me equivoque|mejor)\b/.test(t);if(!cambio||!S.movs.length)return null;
+ const m=lastMov();if(!m)return null;const grupo=m.grupo?S.movs.filter(x=>x.grupo===m.grupo):[m],cambios=[],aplicar=[];
+ const pg=pagoDe(t,m.tipo),cat=catDe(t,m.tipo,true);
+ const mmonto=t.match(/\b(?:monto|importe|precio|era|eran|fue|fueron|es|a)\s+(?:de\s+|a\s+)?\$?\s*(\d[\d.,]*)\s*(mil|lucas?|k|palos?)?/),ex=/\b(monto|importe|precio)\b/.test(t)||/\b(era|eran)\s+(de\s+)?\$?\s*\d/.test(t);
+ if(pg&&pg!==m.pago&&/\b(tarjeta|con|en|a|pone\w*|pasa\w*|cambia\w*)\b/.test(t))aplicar.push(['pago',pg]);
+ if(cat&&cat!==m.cat)aplicar.push(['cat',cat]);
+ if(ex&&mmonto){const v=montoDe(limpia(tx));if(v>0&&v!==m.monto)aplicar.push(['monto',v])}
+ if(/\b(fecha|fue|era)\b/.test(t)&&(/\b(ayer|anteayer|hoy)\b/.test(t)||c2dateExp(t))&&!ex){const f=fechaDe(t);if(f!==m.fecha)aplicar.push(['fecha',f])}
+ if(!aplicar.length)return null;
+ if(m.grupo&&aplicar.some(a=>a[0]==='monto'||a[0]==='fecha')){V.chat.push({r:'b',t:'«'+m.desc+'» es una compra en cuotas: el monto y la fecha se editan desde Movimientos (para no desarmar el plan).'});return true}
+ const sn=c2snap(['movs','memoria']);aplicar.forEach(([k,v])=>{grupo.forEach(x=>{if(k==='pago'&&v.indexOf('tarjeta:')===0&&x.tipo!=='Gasto')return;x[k]=v});cambios.push(k==='pago'?'medio de pago → '+pagoNombre(v):k==='cat'?'categoría → '+v:k==='monto'?'monto → '+fmt(v,m.moneda||'ARS'):'fecha → '+fd(v))});
+ let extra='';const ac=aplicar.find(a=>a[0]==='cat');if(ac){const key=wsG(m.desc.replace(/\s+C\s+\d{2}\/\d{2}$/,'')).join(' ');if(key){S.memoria=S.memoria||{};S.memoria[key]=ac[1];extra='\nAprendí que «'+C2CAP(key)+'» va a '+ac[1]+'.'}}
+ save();c2push('la edición de «'+m.desc+'»',sn);V.chat.push({r:'b',t:'✏️ Listo, en «'+m.desc+'» cambié: '+cambios.join(', ')+'.'+extra});return true}
+/* ---------- configuración por chat ---------- */
+function tarjetaDeDias(nombre,cd,vd){const cierre=proxDia(cd),anterior=addMonths(cierre,-1);let venc='';if(vd){venc=proxDia(vd,addDays(cierre,1))}return{id:uid(),nombre:nombre,anterior:anterior,cierre:cierre,vencimiento:venc}}
+function corregirRend(fecha,id,valor){const R=S.rend;R.correcciones=R.correcciones||{};R.correcciones[fecha]=R.correcciones[fecha]||{};R.correcciones[fecha][id]={tipo:'valor',valor:valor,origen:'chat',actualizado:new Date().toISOString()};R.log=R.log||{};const lg=R.log[fecha];if(lg){lg.por=lg.por||{};const ant=Number(lg.por[id])||0;lg.por[id]=valor;lg.rend=Math.round(((Number(lg.rend)||0)-ant+valor)*100)/100;const delta=valor-ant;Object.keys(R.log).filter(f=>f>fecha).sort().forEach(f=>{if(R.log[f].saldo!=null)R.log[f].saldo=Math.round((R.log[f].saldo+delta)*100)/100})}save()}
+function c2x2(l,snap,txt,run){const op={k:'x2',l:l,snap:snap,run:run};V.pend=op;V.chat.push({r:'b',t:txt+'\n¿Confirmás?',op:op});return true}
+function comandoConfig(tx,t){
+ const say=(m,x)=>{V.chat.push(Object.assign({r:'b',t:m},x||{}));return true};
+ /* tarjeta nueva (con preguntas) */
+ if(V.cx&&V.cx.k==='tarjeta'){const c=V.cx,nums=(t.match(/\b\d{1,2}\b/g)||[]).map(Number).filter(n=>n>=1&&n<=31);const cm=t.match(/cierr\w*\s+(?:el\s+|dia\s+|los\s+)?(\d{1,2})/),vm=t.match(/venc\w*\s+(?:el\s+|dia\s+|los\s+)?(\d{1,2})/);
+  if(cm)c.cd=Number(cm[1]);if(vm)c.vd=Number(vm[1]);if(!cm&&!vm&&nums.length){if(!c.cd){c.cd=nums[0];if(nums[1])c.vd=nums[1]}else if(!c.vd)c.vd=nums[0]}
+  if(!c.cd)return say('¿Qué día del mes cierra? (1 a 31)');if(!c.vd&&!c.skipV)return say('¿Y qué día vence el resumen? (1 a 31)');
+  V.cx=null;return c2x2('la tarjeta nueva',['tarjetas'],'Voy a crear la tarjeta «'+c.nombre+'»: cierra el día '+c.cd+(c.vd?' y vence el día '+c.vd:'')+' (próximo cierre '+fd(proxDia(c.cd))+').',()=>{const x=tarjetaDeDias(c.nombre,c.cd,c.vd);S.tarjetas.push(x);save();return '✅ Tarjeta «'+c.nombre+'» creada. Próximo cierre '+fd(x.cierre)+(x.vencimiento?', vence el '+fd(x.vencimiento):'')+'.'})}
+ if(/\b(agrega\w*|crea\w*|anota\w*|suma\w*|nueva|nuevo|alta)\b/.test(t)&&/\btarjeta\b/.test(t)&&!/\bgasto|ingreso\b/.test(t)){
+  const mn=tx.match(/tarjeta(?:\s+de\s+cr[eé]dito)?\s+([A-Za-zÁÉÍÓÚáéíóúñÑ0-9][A-Za-zÁÉÍÓÚáéíóúñÑ0-9 ]*?)(?=\s*(?:,|\.|cierra|cierre|vence|vencimiento|que\s|con\s|el\s+\d|dia\s+\d|$))/i);
+  let nombre=mn?C2CAP(mn[1].replace(/^(la|una|nueva|el)\s+/i,'')):'';
+  if(!nombre||/^(la|una|nueva)$/i.test(nombre)){V.cx=null;return say('¿Cómo se llama la tarjeta? Por ejemplo: “agregá la tarjeta Visa, cierra el 25 y vence el 5”.')}
+  if(S.tarjetas.some(x=>nz(x.nombre)===nz(nombre)))return say('Ya tenés una tarjeta «'+nombre+'».');
+  const cm=t.match(/cierr\w*\s+(?:el\s+|dia\s+|los\s+)?(\d{1,2})/),vm=t.match(/venc\w*\s+(?:el\s+|dia\s+|los\s+)?(\d{1,2})/);
+  if(!cm){V.cx={k:'tarjeta',nombre:nombre,cd:0,vd:vm?Number(vm[1]):0};return say('Tarjeta «'+nombre+'». ¿Qué día del mes cierra?')}
+  if(!vm){V.cx={k:'tarjeta',nombre:nombre,cd:Number(cm[1]),vd:0};return say('Cierra el día '+cm[1]+'. ¿Y qué día vence el resumen?')}
+  const cd=Number(cm[1]),vd=Number(vm[1]);return c2x2('la tarjeta nueva',['tarjetas'],'Voy a crear la tarjeta «'+nombre+'»: cierra el día '+cd+' y vence el día '+vd+' (próximo cierre '+fd(proxDia(cd))+').',()=>{const x=tarjetaDeDias(nombre,cd,vd);S.tarjetas.push(x);save();return '✅ Tarjeta «'+nombre+'» creada. Próximo cierre '+fd(x.cierre)+', vence el '+fd(x.vencimiento)+'.'})}
+ /* cambiar cierre / vencimiento */
+ {const tj=tjEn(t);if(tj.length===1&&/\b(cierre|cierra|vencimiento|vence)\b/.test(t)&&/\b(cambia\w*|pasa\w*|mueve\w*|move\w*|modifica\w*|actualiza\w*|corre\w*|ahora)\b/.test(t)&&!/\b(cuando|cual|que dia)\b/.test(t)){const x=tj[0],cm=t.match(/cierr\w*[^\d]{0,30}?(\d{1,2})\b/),vm=t.match(/venc\w*[^\d]{0,30}?(\d{1,2})\b/);let nc=cm?Number(cm[1]):0,nv=vm?Number(vm[1]):0;
+   if(!nc&&!nv){const n=(t.match(/\b\d{1,2}\b/g)||[]).map(Number).pop();if(!n)return say('¿A qué día? Por ejemplo: “cambiá el cierre de la '+x.nombre+' al 28”.');if(/\b(cierre|cierra)\b/.test(t))nc=n;else nv=n}
+   if(nc>31||nv>31)return say('Los días van de 1 a 31.');
+   const ncF=nc?diaEn(x.cierre,nc):x.cierre,nvF=nv&&x.vencimiento?diaEn(x.vencimiento,nv):nv?proxDia(nv,addDays(ncF,1)):x.vencimiento;
+   if(ncF<=x.anterior)return say('El nuevo cierre ('+fd(ncF)+') tiene que ser posterior al cierre anterior ('+fd(x.anterior)+').');
+   return c2x2('el cambio de fechas de '+x.nombre,['tarjetas'],x.nombre+': '+(nc?'cierre '+fd(x.cierre)+' → '+fd(ncF):'')+(nc&&nv?' · ':'')+(nv?'vencimiento '+(x.vencimiento?fd(x.vencimiento):'—')+' → '+fd(nvF):''),()=>{x.cierre=ncF;if(nv)x.vencimiento=nvF;save();return '✅ '+x.nombre+' actualizada: cierra el '+fd(x.cierre)+(x.vencimiento?', vence el '+fd(x.vencimiento):'')+'.'})}}
+ /* próximo ciclo */
+ {const tj=tjEn(t);if(tj.length===1&&/\b(proximo|siguiente|nuevo)\s+ciclo\b|\b(cerra\w*|avanza\w*|pasa\w*)\b.*\bciclo\b/.test(t)){const x=tj[0];return c2x2('el cambio de ciclo de '+x.nombre,['tarjetas'],'Paso '+x.nombre+' al próximo ciclo: cierre anterior '+fd(x.cierre)+', nuevo cierre '+fd(addMonths(x.cierre,1))+(x.vencimiento?', vence '+fd(addMonths(x.vencimiento,1)):'')+'.',()=>{x.anterior=x.cierre;x.cierre=addMonths(x.cierre,1);if(x.vencimiento)x.vencimiento=addMonths(x.vencimiento,1);save();return '✅ '+x.nombre+' en el nuevo ciclo: cierra el '+fd(x.cierre)+'.'})}}
+ /* categoría / medio */
+ {const m=t.match(/\b(?:agrega\w*|crea\w*|anota\w*|suma\w*|nueva|nuevo)\b.*?\b(categoria|medio(?:\s+de\s+pago)?)\b\s*(?:de\s+(ingresos?|gastos?)\s*)?(?:llamad[ao]\s+)?(?:de\s+pago\s+)?(.+)$/);if(m&&!/\btarjeta\b/.test(t)){const ori=tx.replace(/^.*?\b(?:categor[ií]a|medio(?:\s+de\s+pago)?)\b\s*(?:de\s+(?:ingresos?|gastos?)\s*)?(?:llamad[ao]\s+)?(?:de\s+pago\s+)?/i,'').replace(/[“”"«»]/g,'').trim(),nombre=C2CAP(ori);if(!nombre)return say('¿Cómo se llama?');const esM=/^medio/.test(m[1]),esI=/^ingreso/.test(m[2]||''),lista=esM?S.medios:esI?S.catIng:S.categorias;if(lista.some(x=>nz(x)===nz(nombre)))return say('«'+nombre+'» ya existe.');conJournal('agregar «'+nombre+'»',[esM?'medios':esI?'catIng':'categorias'],()=>{lista.push(nombre);save()});return say('✅ Agregué «'+nombre+'» a '+(esM?'los medios de pago':esI?'las categorías de ingreso':'las categorías de gasto')+'.')}}
+ /* feriados */
+ if(/\bferiado\b/.test(t)&&!/\b(cuando|cual|cuales|proximo|hay)\b/.test(t)){if(!S.rend)return say('Primero cargá tus billeteras en la pestaña Rend.');if(!c2dateExp(t))return say('¿Qué fecha? Por ejemplo: “agregá feriado el 20/11”.');const R=S.rend;R.feriados=R.feriados||[];const f=fechaCerca(t),quitar=/\b(saca\w*|quita\w*|borra\w*|elimina\w*)\b/.test(t);
+  if(quitar){if(R.feriados.indexOf(f)<0)return say('El '+fd(f)+' no estaba cargado como feriado.');conJournal('quitar feriado',['rend'],()=>{R.feriados=R.feriados.filter(x=>x!==f);save()});return say('✅ Quité el feriado del '+fd(f)+'.')}
+  if(R.feriados.indexOf(f)>-1)return say('El '+fd(f)+' ya está cargado como feriado.');conJournal('agregar feriado',['rend'],()=>{R.feriados.push(f);R.feriados.sort();save()});return say('✅ Cargué el feriado del '+fd(f)+'. Afecta el cálculo de las billeteras de calendario hábil.')}
+ /* TNA */
+ if(S.rend&&/\b(tna|tasa)\b/.test(t)){const b=matchEnt(S.rend.b,t,x=>x.nombre);if(b){const sn=limpia(tx).replace(/\bdesde\b.*$/i,''),mm=nz(sn).match(/(\d+(?:[.,]\d+)?)\s*(?:%|por ciento)?/),cambio=/\b(cambia\w*|pasa\w*|sube|baja\w*|actualiza\w*|ahora|nueva|pone\w*|modifica\w*|es de|queda)\b/.test(t);
+   if(!cambio||!mm){const ts=(b.tasas||[]).slice().sort((x,y)=>x.desde.localeCompare(y.desde));return say(b.nombre+': TNA vigente '+tasaFecha(b,hoy())+'%'+(ts.length>1?'\nHistorial:\n'+c2lista(ts.map(x=>'desde '+fd(x.desde)+': '+x.tna+'%')):'')+'\nPara cambiarla: “cambiá la tasa de '+b.nombre.split('/')[0]+' a 38 desde el 15/11”.')}
+   const tna=Number(mm[1].replace(',','.'));if(!(tna>=0&&tna<=500))return say('Esa tasa no parece válida (0 a 500).');const desde=c2dateExp(t)?fechaDe(t,true):hoy();
+   return c2x2('el cambio de tasa de '+b.nombre,['rend'],b.nombre+': TNA '+tasaFecha(b,desde)+'% → '+tna+'% desde el '+fd(desde)+'.',()=>{b.tasas=(b.tasas||[]).filter(x=>x.desde!==desde);b.tasas.push({desde:desde,tna:tna});b.tasas.sort((x,y)=>x.desde.localeCompare(y.desde));if(desde<=hoy())b.tna=tna;save();return '✅ '+b.nombre+': TNA '+tna+'% desde el '+fd(desde)+'.'})}}
+ /* corrección de rendimiento */
+ if(S.rend&&/\b(corregi\w*|corrige|ajusta\w*|rindio|rendimiento|cambia\w*|pone\w*)\b/.test(t)&&!/^(cuanto|cual|cuando|que)\b/.test(t)&&!/\b(tna|tasa|saldo|feriado)\b/.test(t)){const b=matchEnt(S.rend.b,t,x=>x.nombre);if(b){const v=montoDe(limpia(tx));if(v>=0&&/\d/.test(limpia(tx))){const f=c2dateExp(t)||/\b(ayer|anteayer|hoy)\b/.test(t)?fechaCerca(t):hoy(),R=S.rend;
+    return c2x2('la corrección de rendimiento',['rend'],'Corrijo el rendimiento de '+b.nombre+' del '+fd(f)+' a '+fmt(v)+'.',()=>{corregirRend(f,b.id,Math.round(v*100)/100);return '✅ Rendimiento de '+b.nombre+' del '+fd(f)+': '+fmt(v)+'. Lo ves en la tabla de Rendimientos.'})}}}
+ /* transferencias entre billeteras o cuentas */
+ if(/\b(pase|pasé|transferi|transfiri|movi|mande|envie|pasale|pasame)\b/.test(t)){const m=t.match(/\bde\s+(.+?)\s+a\s+(.+)$/);if(m){const v=montoDe(limpia(tx.replace(/\bde\s+.+?\s+a\s+.+$/i,' '))),bb=S.rend?[matchEnt(S.rend.b,m[1],x=>x.nombre),matchEnt(S.rend.b,m[2],x=>x.nombre)]:[null,null],cc=[matchEnt(S.cuentas,m[1],x=>x.nombre),matchEnt(S.cuentas,m[2],x=>x.nombre)],f=fechaCerca(t);
+   if(bb[0]&&bb[1]&&bb[0]!==bb[1]){if(!(v>0))return say('¿Cuánto transferiste de '+bb[0].nombre+' a '+bb[1].nombre+'?');return c2x2('la transferencia entre billeteras',['rend'],'Transferencia entre billeteras: '+fmt(v)+' de '+bb[0].nombre+' a '+bb[1].nombre+' · '+fd(f)+'.\n(No cambia el saldo proyectado: solo cuenta para los límites de las billeteras.)',()=>{(S.rend.transferencias=S.rend.transferencias||[]).push({id:uid(),fecha:f,origen:bb[0].id,destino:bb[1].id,monto:Math.round(v*100)/100,estado:'realizada',creado:hoy()});save();return '✅ Transferencia guardada: '+fmt(v)+' de '+bb[0].nombre+' a '+bb[1].nombre+'.'})}
+   if(cc[0]&&cc[1]&&cc[0]!==cc[1]){if(!(v>0))return say('¿Cuánto transferiste de '+cc[0].nombre+' a '+cc[1].nombre+'?');const A=cc[0],B=cc[1];if(A.moneda!==B.moneda)return say('Esas cuentas son de monedas distintas ('+A.moneda+' → '+B.moneda+'): hacé la transferencia desde Ajustes para indicar el tipo de cambio.');if(v>Number(A.saldo||0))return say('«'+A.nombre+'» tiene '+fmt(A.saldo,A.moneda)+': no alcanza para transferir '+fmt(v,A.moneda)+'.');
+    return c2x2('la transferencia entre cuentas',['cuentas','transferencias'],'Transferencia: '+fmt(v,A.moneda)+' de '+A.nombre+' a '+B.nombre+'.',()=>{A.saldo=Math.round((Number(A.saldo||0)-v)*100)/100;B.saldo=Math.round((Number(B.saldo||0)+v)*100)/100;S.transferencias.push({id:uid(),fecha:f,origen:A.id,destino:B.id,origenNombre:A.nombre,destinoNombre:B.nombre,monto:v,montoDestino:v,moneda:A.moneda,monedaDestino:B.moneda,tasa:1});save();return '✅ Transferencia registrada: '+fmt(v,A.moneda)+' de '+A.nombre+' a '+B.nombre+'.'})}}}
+ return null}
+/* ---------- seguimiento de consultas ("¿y el mes pasado?") ---------- */
+const C2PER=/(mes pasado|mes anterior|este mes|hoy|ayer|anteayer|esta semana|semana pasada|este ano|ano pasado|ultimos \d+ dias|en (?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre))/g;
+function consultar(t,tx){
+ const r=consTarjetas(t)||consGen(t);return r}
+function seguimiento(t,tx){
+ if(!V.lastQ||!/^(y|y que|y en|y de|y con|y para|y el|y la|y los|y las|y este|y esta|y hoy|y ayer|y ahora|lo mismo|igual|mismo|pero)\b/.test(t)||C2MOV.test(t))return null;
+ let fu=t.replace(/^(y que|y|lo mismo|igual|mismo|pero)\s+/,'').trim(),base=V.lastQ;const monF=/\b(usd|dolares?|dolar)\b/.test(fu)?'USD':/\b(eur|euros?)\b/.test(fu)?'EUR':/\b(ars|pesos)\b/.test(fu)?'ARS':null;
+ if(C2PER.test(fu)){C2PER.lastIndex=0;base=base.replace(C2PER,' ')}C2PER.lastIndex=0;
+ if(catDe(fu,'Gasto',true)||tjEn(fu).length){const nom=S.categorias.concat(S.catIng,S.tarjetas.map(x=>x.nombre),S.medios).reduce((a,x)=>a.concat(wsG(x)),[]);base=base.split(' ').filter(w=>nom.indexOf(w)<0).join(' ')}
+ const nq=(base+' '+fu).replace(/\s+/g,' ').trim(),prev=V.monedaVista;if(monF)V.monedaVista=monF;let r=null;try{r=consultar(nq,nq)||((()=>{const q=responderCh(nq);return q||null})())}finally{V.monedaVista=prev}
+ if(!r)return null;V.lastQ=nq;return r}
+/* ---------- procesador principal ---------- */
+function dupTxt(op){const d=S.movs.find(m=>m.tipo===op.tipo&&m.fecha===op.fecha&&Math.abs(m.monto-op.monto)<0.005&&(m.moneda||'ARS')===(op.moneda||'ARS')&&wsG(m.desc).some(w=>w.length>2&&wsG(op.desc).indexOf(w)>-1));return d?'\n⚠️ Ya cargaste algo parecido: «'+d.desc+'» el '+fd(d.fecha)+'. Si confirmás, se carga igual.':''}
+const C2OK=/^(si|sii+|ok|oka|okey|dale|dale que si|confirmar|confirmo|confirmado|listo|de una|perfecto|joya)$/;
+function procesarChat(tx0){
+ const b=(m,x)=>V.chat.push(Object.assign({r:'b',t:m},x||{})),n=nz(tx0).trim().replace(/[.!¡¿?]+/g,'').trim();
+ if(/^(cancelar|cancela|olvidalo|nada|no|no gracias|descartar|descarta)$/.test(n)){V.pend=null;V.ctx='';V.cx=null;return b('Listo, lo descarté. No registré nada.')}
+ if(V.pend&&C2OK.test(n))return chatOkF();
+ const esQ=/^[¿¡\s]*(cuanto|cuantos|cuantas|que|cual|cuales|cuando|como|en que|decime|mostrame|promedio|comparame|buscame|busca)\b/.test(nz(tx0).trim())||/\?\s*$/.test(String(tx0).trim()),tx=preproc(tx0,esQ),t=nz(tx).trim().replace(/^[¿¡\s]+/,'');
+ if(/^(borra\w*|limpia\w*|elimina\w*|vacia\w*)\s+(el\s+)?(historial|chat|conversacion)\b/.test(t)){V.chat=[{r:'b',t:'Chat limpio. ¿Qué cargamos?'}];return}
+ if(/^(desha\w*|deshaz\w*|volve\w* atras|volver atras|me equivoque|anula\w* (eso|lo ultimo|el ultimo)|cancela\w* lo ultimo|undo)$/.test(t))return undoChat();
+ if(V.cx&&V.cx.k==='tarjeta'&&!/^(agrega|crea|anota)/.test(t)&&comandoConfig(tx,t))return;V.cx=null;
+ let r;
+ if((r=comandoMemoria(tx,t)))return b(r);
+ if(comandoRepetir(tx,t))return;
+ if(comandoMasivo(tx,t))return;
+ if(comandoDevolucion(tx,t))return;
+ if(comandoConfig(tx,t))return;
+ if(comandoEditarUltimo(tx,t))return;
+ if((r=seguimiento(t,tx))){const x=typeof r==='string'?{t:r}:r;return b(x.t,{links:x.links})}
+ if((r=consultar(t,tx))){V.lastQ=t;const x=typeof r==='string'?{t:r}:r;return b(x.t,{links:x.links})}
+ /* cuota k de n */
+ const mk=t.match(/\bcuota\s+(\d{1,2})\s*(?:de|\/)\s*(\d{1,2})\b/);
+ if(mk){const k=Number(mk[1]),nn=Number(mk[2]);if(nn<2||nn>48||k<1||k>nn)return b('Revisá las cuotas: tienen que ser tipo “cuota 2 de 6” (de 2 a 48 cuotas).');
+  const tx2=tx.replace(/\bcuota\s+\d{1,2}\s*(?:de|\/)\s*\d{1,2}\b/i,nn+' cuotas'),rr=interpretar(V.ctx?V.ctx+'\n'+tx2:tx2);
+  if(!rr.ok){V.ctx=(V.ctx?V.ctx+'\n':'')+tx2;V.pend=null;return b(rr.preg,{opts:rr.opts})}
+  if(rr.op.pago.indexOf('tarjeta:')!==0)return b('Las cuotas solo aplican a compras con tarjeta. ¿Con qué tarjeta fue?',{opts:c2opts(S.tarjetas.map(x=>x.nombre))});
+  const yaTotal=/\bcuotas?\s+(?:de|x)\s*\$?\s*\d/.test(nz(tx2)),op=rr.op;if(!yaTotal)op.monto=Math.round(op.monto*nn*100)/100;const orig=op.fecha;op.fecha=addMonths(op.fecha,-(k-1));V.ctx='';V.pend=op;
+  return b('Esto entendí:\n'+resumenOp(op)+'\nTomé '+fmt(op.monto/nn)+' como valor de cada cuota (total '+fmt(op.monto)+'). La cuota '+k+' de '+nn+' cae el '+fd(orig)+'; las '+(k-1)+' anteriores quedan como historial.'+dupTxt(op),{op:op})}
+ return procesarChatV1(tx);
+}
+
+function procesarChatV1(tx){
  const b=m=>V.chat.push({r:'b',t:m}),n=nz(tx).trim();
  if(/^(cancelar|cancela|olvidalo|nada|no)$/.test(n)){V.pend=null;V.ctx='';return b('Listo, lo descarté. No registré nada.')}
  if(V.pend&&V.pend.k==='varios'&&/^(si|ok|dale|confirmar|confirmo|listo)$/.test(n))return ejecutarVarios(V.pend);
@@ -752,15 +1057,18 @@ function procesarChat(tx){
  const gestion=comandoGestionChat(tx);if(gestion)return b(gestion);
  const varios=separarMovimientosChat(tx);if(varios){const z=procesarVarios(tx,varios);if(z.error)return b(z.error);return}
  if(V.ctx){const s1=cfgDe(tx);if((s1&&s1.ok)||interpretar(tx).ok)V.ctx=''}
- {const q=responderCh(tx);if(q)return b(q)}
+ {const q=responderCh(tx);if(q){V.lastQ=nz(tx);return b(q)}}
  const c=cfgDe(V.ctx?V.ctx+'\n'+tx:tx);
- if(c){if(!c.ok){V.ctx=(V.ctx?V.ctx+'\n':'')+tx;V.pend=null;return b(c.preg)}V.ctx='';V.pend=c.op;V.chat.push({r:'b',t:'Esto entendí:\n'+resumenCfg(c.op),op:c.op});return}
+ if(c){if(!c.ok){V.ctx=(V.ctx?V.ctx+'\n':'')+tx;V.pend=null;return V.chat.push({r:'b',t:c.preg,opts:c.opts})}V.ctx='';V.pend=c.op;V.chat.push({r:'b',t:'Esto entendí:\n'+resumenCfg(c.op),op:c.op});return}
  const r=interpretar(V.ctx?V.ctx+'\n'+tx:tx);
- if(!r.ok){V.ctx=(V.ctx?V.ctx+'\n':'')+tx;V.pend=null;return b(r.preg)}
- V.ctx='';V.pend=r.op;V.chat.push({r:'b',t:'Esto entendí:\n'+resumenOp(r.op),op:r.op});
+ if(!r.ok){V.ctx=(V.ctx?V.ctx+'\n':'')+tx;V.pend=null;return V.chat.push({r:'b',t:r.preg,opts:r.opts})}
+ V.ctx='';V.pend=r.op;V.chat.push({r:'b',t:'Esto entendí:\n'+resumenOp(r.op)+dupTxt(r.op),op:r.op});
 }
+function chatExtras(m,i){let h='';if(m.opts&&m.opts.length&&i===V.chat.length-1)h+="<div class='bo'>"+m.opts.map(o=>`<button data-a='chatOpt' data-t='${esc(o)}'>${esc(o)}</button>`).join('')+"</div>";if(m.links&&m.links.length)h+="<div class='bo'>"+m.links.map(l=>`<button data-a='chatGo' data-go='${l.go}' data-id='${esc(l.id||'')}' data-q='${esc(l.q||'')}' data-cat='${esc(l.cat||'')}'>${esc(l.t)} ›</button>`).join('')+"</div>";return h}
+function chatChips(){if(V.pend)return '';const c=['Repetir el último','Resumen del mes','Qué vence pronto','Cuál tarjeta cierra primero'];if(V.journal&&V.journal.length)c.push('Deshacer');return "<div class='sg'>"+c.map(x=>`<button data-a='chatSend' data-t='${esc(x)}'>${esc(x)}</button>`).join('')+"<button data-a='chatClear'>Borrar chat</button></div>"}
+function guardarChat(){try{localStorage.setItem('mf_chat_v1',JSON.stringify(V.chat.slice(-80).map(m=>({r:m.r,t:m.t,links:m.links}))))}catch(e){}}
 function vChat(){
- return `<h1>Chat</h1><div class='ch'>${V.chat.map(m=>`<div class='bb ${m.r}'>${esc(m.t)}${m.op&&V.pend===m.op?`<div class='ba'><button class='btn' data-a='chatOk'>Confirmar</button>${m.op.k==='varios'?'':`<button class='btn sec' data-a='chatEd'>Editar</button>`}<button class='btn sec' data-a='chatNo'>Cancelar</button></div>`:''}</div>`).join('')}</div><div class='cb'><button class='ic' data-a='nuevo' aria-label='Cargar a mano'>＋</button><input id='chatIn' placeholder='Ej: Gasté 12500 en el súper con débito' autocomplete='off' enterkeyhint='send'><button class='btn' data-a='chatEnv'>Enviar</button></div>`;
+ return `<h1>Chat</h1><div class='ch'>${V.chat.map((m,i)=>`<div class='bb ${m.r}'>${esc(m.t)}${chatExtras(m,i)}${m.op&&V.pend===m.op?`<div class='ba'><button class='btn' data-a='chatOk'>Confirmar</button>${m.op.k==='varios'||m.op.k==='x2'?'':`<button class='btn sec' data-a='chatEd'>Editar</button>`}<button class='btn sec' data-a='chatNo'>Cancelar</button></div>`:''}</div>`).join('')}</div>${chatChips()}<div class='cb'><button class='ic' data-a='nuevo' aria-label='Cargar a mano'>＋</button><input id='chatIn' placeholder='Ej: Gasté 12500 en el súper con débito' autocomplete='off' enterkeyhint='send'><button class='btn' data-a='chatEnv'>Enviar</button></div>`;
 }
 function exportarCSV(){
   const filas=[['Fecha','Descripcion','Monto','Moneda','Medio de pago','Tipo','Estado']];
@@ -776,6 +1084,7 @@ function render(){
   const t=V.tab;const _ws=document.querySelector('.ws.full'),_wp=(_ws&&!V.wsReset)?[_ws.scrollTop,_ws.scrollLeft]:null;V.wsReset=false;
   $('#app').innerHTML=`${V.toast?`<div class='toast'>${esc(V.toast)}</div>`:''}<main>${t==='res'?vRes():t==='mov'?vMov():t==='chat'?vChat():t==='tar'?vTar():t==='ren'?vRen():vAju()}</main><nav class="tabs">${[['res','Resumen'],['mov','Movim.'],['chat','Chat'],['tar','Tarjetas'],['ren','Rendim.'],['aju','Ajustes']].map(([k,n])=>`<button data-a="tab" data-k="${k}" ${t===k?'aria-current="page"':''}>${n}</button>`).join('')}</nav>${t==='chat'?'':'<button class="fab" data-a="nuevo" aria-label="Cargar movimiento">+</button>'}${V.sheet?(sheet()||sheetR()):''}`;
   const _w2=document.querySelector('.ws.full');if(_wp&&_w2){_w2.scrollTop=_wp[0];_w2.scrollLeft=_wp[1]}if(V.top){scrollTo(0,0);V.top=false}
+  if(t==='chat')guardarChat();
   if(t==='chat'){scrollTo(0,document.body.scrollHeight);if(V.foco){const q=$('#chatIn');if(q)q.focus();V.foco=false}}
 }
 function act(a,d){
@@ -877,7 +1186,11 @@ function act(a,d){
     chatEnv:()=>{const i=$('#chatIn'),tx=i?i.value.trim():'';if(!tx)return;V.chat.push({r:'u',t:tx});procesarChat(tx);V.foco=true},
     chatOk:chatOkF,
     chatEd:()=>{const op=V.pend;if(!op)return;if(op.k)return chatEdCfg(op);V.f={tipo:op.tipo,monto:String(op.monto),desc:op.desc,cat:op.cat,pago:op.pago,fecha:op.fecha,cuotas:String(op.cuotas),moneda:op.moneda||'ARS'};V.sheet='mov';V.err='';V.pend=null;V.chat.push({r:'b',t:'Lo abrí para que lo edites.'})},
-    chatNo:()=>{V.pend=null;V.ctx='';V.chat.push({r:'b',t:'Cancelado. No registré nada.'})},
+    chatNo:()=>{V.pend=null;V.ctx='';V.cx=null;V.chat.push({r:'b',t:'Cancelado. No registré nada.'})},
+    chatSend:()=>{V.chat.push({r:'u',t:d.t});procesarChat(d.t);V.foco=true},
+    chatOpt:()=>{V.chat.push({r:'u',t:d.t});procesarChat(d.t);V.foco=true},
+    chatClear:()=>{V.chat=[{r:'b',t:'Chat limpio. ¿Qué cargamos?'}];V.pend=null;V.ctx='';V.cx=null},
+    chatGo:()=>{if(d.go==='mov'){limpiarFiltrosMov();V.movQ=d.q||'';if(d.cat)V.movCat=d.cat;V.tab='mov'}else if(d.go==='tar'){V.tab='tar';V.tarDet={id:d.id,p:0}}else if(d.go==='ren'){V.tab='ren'}V.top=true},
     addCI:()=>addTo(S.catIng,'#nCI'),
     rmCI:()=>{S.catIng.splice(Number(d.i),1);save()},
     addCat:()=>addTo(S.categorias,'#nCat'),
@@ -885,7 +1198,7 @@ function act(a,d){
     addMed:()=>addTo(S.medios,'#nMed'),
     rmMed:()=>{S.medios.splice(Number(d.i),1);save()},
     copiar:()=>{const t=$('#exp');t.select();try{navigator.clipboard.writeText(t.value);V.msg='Datos copiados.'}catch(e){try{document.execCommand('copy');V.msg='Datos copiados.'}catch(e2){V.msg='Seleccioná el texto y copialo a mano.'}}},
-    importar:()=>{try{const j=JSON.parse($('#imp').value);if(!j||!Array.isArray(j.movs)||!Array.isArray(j.tarjetas))throw 0;S={tarjetas:j.tarjetas,medios:j.medios||[],categorias:j.categorias||[],movs:j.movs,rend:j.rend||null,catIng:j.catIng||['Sueldo','Ventas','Otros ingresos'],pres:j.pres||{},presTar:j.presTar||{},cuentas:j.cuentas||[],transferencias:j.transferencias||[],moneda:j.moneda||'ARS',fijos:j.fijos||[],vtos:j.vtos||[],bor:j.bor||[]};save();V.msg='Datos restaurados.'}catch(e){V.msg='No pude leer esos datos: pegá el texto copiado completo.'}}
+    importar:()=>{try{const j=JSON.parse($('#imp').value);if(!j||!Array.isArray(j.movs)||!Array.isArray(j.tarjetas))throw 0;S={tarjetas:j.tarjetas,medios:j.medios||[],categorias:j.categorias||[],movs:j.movs,rend:j.rend||null,catIng:j.catIng||['Sueldo','Ventas','Otros ingresos'],pres:j.pres||{},presTar:j.presTar||{},cuentas:j.cuentas||[],transferencias:j.transferencias||[],moneda:j.moneda||'ARS',memoria:j.memoria||{},fijos:j.fijos||[],vtos:j.vtos||[],bor:j.bor||[]};save();V.msg='Datos restaurados.'}catch(e){V.msg='No pude leer esos datos: pegá el texto copiado completo.'}}
   }[a];
   if(x){x();render()}
 }
