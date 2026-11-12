@@ -98,7 +98,7 @@
     var bor = Array.from(new Set((a.bor || []).concat(b.bor || [])));
     var out = Object.assign({}, b, a);
     Object.keys(b).forEach(function (k) { if (out[k] == null) out[k] = b[k]; });
-    ['movs', 'tarjetas', 'fijos', 'vtos', 'cuentas', 'transferencias'].forEach(function (k) {
+    ['movs', 'tarjetas', 'fijos', 'vtos', 'cuentas', 'transferencias', 'pagosTar'].forEach(function (k) {
       var m = {};
       (b[k] || []).forEach(function (x) { m[x.id] = x; });
       (a[k] || []).forEach(function (x) { m[x.id] = x; });

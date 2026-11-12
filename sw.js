@@ -32,7 +32,8 @@ self.addEventListener('push', event => {
   }
   event.waitUntil(self.registration.showNotification(data.title || 'Mis finanzas', {
     body: data.body || 'Tenés un recordatorio.', icon: './icon-192.png', badge: './icon-192.png',
-    data: { url: data.url || './' }, tag: data.tag || 'mis-finanzas-recordatorio', renotify: false
+    data: { url: data.url || './' }, tag: data.tag || 'mis-finanzas-recordatorio', renotify: false,
+    requireInteraction: !!data.urgent, vibrate: data.urgent ? [200, 100, 200] : undefined
   }));
 });
 self.addEventListener('notificationclick', event => {
