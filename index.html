@@ -477,6 +477,11 @@ const DL='DLMXJVS',ORD=[1,2,3,4,5,6,0],fm0=n=>Number(n).toLocaleString('es-AR',{
 function tasaFecha(b,f){const ts=(b.tasas||[{desde:'0000-01-01',tna:b.tna}]).slice().sort((a,b)=>a.desde.localeCompare(b.desde));let t=Number(b.tna)||0;ts.forEach(x=>{if(x.desde<=f)t=Number(x.tna)||0});return t}
 function usoLimite(b,tipo,fecha,periodo){const ts=(S.rend.transferencias||[]).filter(x=>x.estado!=='anulada'&&(periodo==='dia'?x.fecha===fecha:x.fecha.slice(0,7)===fecha.slice(0,7)));return ts.reduce((a,x)=>a+((tipo==='ingreso'&&x.destino===b.id)||(tipo==='salida'&&x.origen===b.id)?Number(x.monto)||0:0),0)}
 function saldoLimite(b,tipo,fecha,periodo){const l=b.limites||{},max=Number(l[(tipo==='ingreso'?'ingreso':'salida')+(periodo==='dia'?'Diario':'Mensual')])||0;return max>0?Math.max(0,max-usoLimite(b,tipo,fecha,periodo)):null}
+const ovDef=v=>(v&&typeof v==='object')?{modo:v.modo||'fijo',monto:Number(v.monto)||0}:{modo:'fijo',monto:Number(v)||0};
+const ovBase=(v,saldo)=>{const o=ovDef(v),s=Math.max(0,saldo);return o.modo==='nada'?0:o.modo==='fijo'?o.monto:o.modo==='todo'?(o.monto>0?Math.min(s,o.monto):s):Math.max(0,s-o.monto)};
+const ovTxt=v=>{const o=ovDef(v);return o.modo==='nada'||(o.modo==='fijo'&&!o.monto)?'no rinde':o.modo==='fijo'?fmt(o.monto)+' fijos':o.modo==='todo'?'todo el saldo'+(o.monto>0?' (hasta '+fmt(o.monto)+')':''):'lo que excede '+fmt(o.monto)};
+function ovForm(w){const m=w.ovModo||'fijo',lab=m==='todo'?'Tope de saldo que rinde (vacío = sin tope)':m==='fijo'?'Importe que rinde ese día (0 = no rinde)':'Piso: rinde lo que lo excede';
+ return `<label>Fecha<input type='date' data-w='ovF' value='${esc(w.ovF||'')}'></label><label>Cómo rinde ese día<select data-w='ovModo' data-r='1'>${[['fijo','Importe fijo'],['todo','Todo el saldo'],['exceso','Lo que excede un piso'],['nada','No rinde']].map(o=>`<option value='${o[0]}' ${o[0]===m?'selected':''}>${o[1]}</option>`).join('')}</select></label>${m!=='nada'?`<label>${lab}<input data-w='ovM' inputmode='decimal' value='${esc(w.ovM||'')}'></label>`:''}<button class='btn sec' data-a='addOv'>Sumar día puntual</button><p class='mut' style='font-size:13px'>Ese día la billetera usa esta regla en lugar de la general. Si la fecha ya tenía una regla puntual, se reemplaza.</p>`}
 function proy(n){
  const R=S.rend;if(!R||!R.fecha||!R.b)return[];
  const fl={},add=(f,v)=>{fl[f]=(fl[f]||0)+v};
@@ -495,7 +500,7 @@ function proy(n){
    const ov=b.ov&&b.ov[f];
    if(corr&&corr.tipo==='cero'){por[b.id]=0;if(diaHabil)ultimoHabil[b.id]=0;return}
    if(corr&&corr.tipo==='valor'){por[b.id]=Number(corr.valor)||0;rend+=por[b.id];if(diaHabil)ultimoHabil[b.id]=por[b.id];return}
-   if(ov!==undefined){const yo=ov*tasaFecha(b,f)/100/365;por[b.id]=yo;rend+=yo;if(diaHabil)ultimoHabil[b.id]=yo;return}
+   if(ov!==undefined){const yo=ovBase(ov,saldo)*tasaFecha(b,f)/100/365;por[b.id]=yo;rend+=yo;if(diaHabil)ultimoHabil[b.id]=yo;return}
    if(b.modo==='nada'){por[b.id]=0;if(diaHabil)ultimoHabil[b.id]=0;return}
    const calendario=b.calendario||(/(carre|carrefour|naranja|uala)/i.test(b.nombre||'')?'diario':'habil');
    if(calendario==='habil'&&noHabil){const y=Number(ultimoHabil[b.id])||0;por[b.id]=y;rend+=y;return}
@@ -624,7 +629,7 @@ function sheetR(){
 ${w.modo!=='nada'?`<label>${lab}<input data-w='monto' inputmode='decimal' value='${esc(w.monto)}'></label>`:''}
 <label>Días en que rinde</label><div class='dias'>${ORD.map(i=>`<button data-a='dia' data-i='${i}' ${w.dias[i]?'aria-pressed=true':''}>${DL[i]}</button>`).join('')}</div>
 <label>Hora de corte (opcional)<input type='time' data-w='corte' value='${esc(w.corte||'')}'></label><label>Avisarme para transferir<select data-w='avisar'><option value='no' ${(w.avisar===true||w.avisar==='si')?'':'selected'}>No</option><option value='si' ${(w.avisar===true||w.avisar==='si')?'selected':''}>Sí, los días marcados y antes del corte</option></select></label><p class='mut' style='font-size:13px'>El aviso llega antes del corte, con la anticipación que elijas en Ajustes > Notificaciones.</p><label>Calendario de rendimientos<select data-w='calendario'><option value='diario' ${(w.calendario||(/(carre|carrefour|naranja|uala)/i.test(w.nombre||'')?'diario':'habil'))==='diario'?'selected':''}>Todos los días calendario (incluye sábados, domingos y feriados)</option><option value='habil' ${(w.calendario||(/(carre|carrefour|naranja|uala)/i.test(w.nombre||'')?'diario':'habil'))==='habil'?'selected':''}>Días hábiles: repetir el último día hábil en fines de semana y feriados</option></select></label><p class='mut' style='margin-top:8px;font-size:13px'>En modalidad diaria se estima rendimiento cada día calendario. En modalidad de días hábiles se usa como referencia el último día hábil. Las transferencias no se generan automáticamente.</p>
-<label>Importes puntuales por día (opcional)</label><div class='chips'>${Object.keys(w.ov||{}).sort().map(k=>`<span class='chip'>${fd(k)}: ${fmt(w.ov[k])}<button data-a='rmOv' data-k='${k}' aria-label='Quitar'>✕</button></span>`).join('')}</div><div class='add'><input type='date' data-w='ovF' value='${esc(w.ovF||'')}'><input data-w='ovM' inputmode='decimal' placeholder='Importe' value='${esc(w.ovM||'')}'><button class='btn' data-a='addOv'>Sumar</button></div><p class='mut' style='font-size:13px'>Ese día la billetera rinde solo sobre ese importe (0 = no rinde ese día).</p>${V.err?`<p class='warn'>${esc(V.err)}</p>`:''}<button class='btn' data-a='guardarBil'>Guardar</button>${w.id?`<button class='btn danger sec' data-a='delBil'>${w.conf?'Tocá otra vez para eliminar':'Eliminar billetera'}</button>`:''}<button class='btn sec' data-a='cerrar'>Cancelar</button></div>`}
+<label>Importes puntuales por día (opcional)</label><div class='chips'>${Object.keys(w.ov||{}).sort().map(k=>`<span class='chip'>${fd(k)}: ${ovTxt(w.ov[k])}<button data-a='rmOv' data-k='${k}' aria-label='Quitar'>✕</button></span>`).join('')}</div>${ovForm(w)}${V.err?`<p class='warn'>${esc(V.err)}</p>`:''}<button class='btn' data-a='guardarBil'>Guardar</button>${w.id?`<button class='btn danger sec' data-a='delBil'>${w.conf?'Tocá otra vez para eliminar':'Eliminar billetera'}</button>`:''}<button class='btn sec' data-a='cerrar'>Cancelar</button></div>`}
  return '';
 }
 const nz=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
@@ -1209,7 +1214,7 @@ function act(a,d){
     guardarBil:guardarBil,
     delBil:()=>{if(!V.w.conf){V.w.conf=true;return}S.rend.b=S.rend.b.filter(z=>z.id!==V.w.id);save();V.sheet=null;V.w=null},
     dia:()=>{const i=Number(d.i);V.w.dias[i]=V.w.dias[i]?0:1},
-    addOv:()=>{const w=V.w,m=num(w.ovM||'');if(!okISO(w.ovF||'')||String(w.ovM||'')===''||!(m>=0)){V.err='Cargá una fecha y un importe (0 si no rinde ese día).';return}w.ov[w.ovF]=m;w.ovF='';w.ovM='';V.err=''},
+    addOv:()=>{const w=V.w,modo=w.ovModo||'fijo',raw=String(w.ovM||'').trim(),m=raw===''?0:num(raw);if(!okISO(w.ovF||'')){V.err='Elegí la fecha del día puntual.';return}if((modo==='fijo'||modo==='exceso')&&raw===''){V.err=modo==='fijo'?'Cargá el importe (0 si no rinde ese día).':'Cargá el piso.';return}if(!(m>=0)){V.err='El importe no es válido.';return}w.ov[w.ovF]=modo==='fijo'?m:{modo:modo,monto:modo==='nada'?0:m};w.ovF='';w.ovM='';V.err=''},
     rmOv:()=>{delete V.w.ov[d.k]},
     difSaldo:()=>{const s=V.s;if(s.saldo===''||!(num(s.saldo)>=0)){V.err='Ingresá el saldo.';return}if(!okISO(s.fecha)){V.err='La fecha no es válida.';return}V.err='';s.paso=1},
     corregirSaldo:()=>{V.s.paso=0},
